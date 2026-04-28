@@ -1,0 +1,13 @@
+{
+  "scenarioId": "CppBuildToolsUpgrade",
+  "operationId": "7d5e44b1-027b-493b-b66a-efd630cd09f8",
+  "description": "Upgrade MSVC (C\u002B\u002B) Build Tools to the latest version and/or resolve C/C\u002B\u002B build issues.",
+  "startTime": "2026-04-28T12:19:39.3475177Z",
+  "lastUpdateTime": "2026-04-28T12:31:36.656668Z",
+  "properties": {
+    "taskStates": {
+      "01-fix-c4244-warnings": "Completed"
+    }
+  },
+  "folderPath": ""
+}

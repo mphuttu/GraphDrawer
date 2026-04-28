@@ -1,5 +1,4 @@
-﻿
-// GraphDrawerDoc.cpp : implementation of the CGraphDrawerDoc class
+﻿// GraphDrawerDoc.cpp : implementation of the CGraphDrawerDoc class
 //
 
 #include "stdafx.h"
@@ -15,6 +14,14 @@
 
 #include <propkey.h>
 #include <cmath>
+
+namespace
+{
+	inline int ToInt(double value)
+	{
+		return static_cast<int>(value);
+	}
+}
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -438,7 +445,7 @@ void DrawSine( CDC * pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrS
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	int EndX =180*( rcClient.Width() / 2 )/(PI * denominator) -0.05 * denominator;
+	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 	/*
 	const int kyscale = (int) 90 / deltai;
 	const int kxscale = (int) ( nTicksInterval / deltai);
@@ -457,10 +464,10 @@ void DrawSine( CDC * pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrS
 
 		// 0.1 mm 
 		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ORIGIN.y + value * denominator;
-		int xpos = ORIGIN.x +  i*PI/180 * denominator  ;
-		int xposneg = ORIGIN.x - i*PI/180 * denominator;
-		int yposneg = ORIGIN.y - value * denominator;
+		int ypos = ToInt(ORIGIN.y + value * denominator);
+		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
+		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
+		int yposneg = ToInt(ORIGIN.y - value * denominator);
 		// Positive x-axis
 		pDC->SetPixel(xpos, ypos, clrSineColor);
 		// Negative x-axis
@@ -527,7 +534,7 @@ void DrawCosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clr
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	int EndX =180*( rcClient.Width() / 2 )/(PI * denominator) -0.05 * denominator;
+	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = 0; i <= EndX; i += deltai )
 	{
@@ -536,10 +543,10 @@ void DrawCosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clr
 
 		// 0.1 mm 
 		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ORIGIN.y + value * denominator;
-		int xpos = ORIGIN.x +  i*PI/180 * denominator  ;
-		int xposneg = ORIGIN.x - i*PI/180 * denominator;
-		int yposneg = ORIGIN.y + value * denominator;
+		int ypos = ToInt(ORIGIN.y + value * denominator);
+		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
+		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
+		int yposneg = ToInt(ORIGIN.y + value * denominator);
 		// Positive x-axis
 		pDC->SetPixel(xpos, ypos, clrSineColor);
 		// Negative x-axis
@@ -607,7 +614,7 @@ void DrawTan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrTan
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	int EndX =180*( rcClient.Width() / 2 )/(PI * denominator) -0.05 * denominator;
+	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = 0; i <= EndX; i += deltai )
 	{
@@ -616,10 +623,10 @@ void DrawTan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrTan
 
 		// 0.1 mm 
 		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ORIGIN.y + value * denominator;
-		int xpos = ORIGIN.x +  i*PI/180 * denominator  ;
-		int xposneg = ORIGIN.x - i*PI/180 * denominator;
-		int yposneg = ORIGIN.y - value * denominator;
+		int ypos = ToInt(ORIGIN.y + value * denominator);
+		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
+		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
+		int yposneg = ToInt(ORIGIN.y - value * denominator);
 		// Positive x-axis
 		pDC->SetPixel(xpos, ypos, clrTanColor);
 		// Negative x-axis
@@ -686,7 +693,7 @@ void DrawCotan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrC
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	int EndX =180*( rcClient.Width() / 2 )/(PI * denominator) -0.05 * denominator;
+	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = 0; i <= EndX; i += deltai )
 	{
@@ -695,10 +702,10 @@ void DrawCotan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrC
 
 		// 0.1 mm 
 		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ORIGIN.y + value * denominator;
-		int xpos = ORIGIN.x +  i*PI/180 * denominator  ;
-		int xposneg = ORIGIN.x - i*PI/180 * denominator;
-		int yposneg = ORIGIN.y - value * denominator;
+		int ypos = ToInt(ORIGIN.y + value * denominator);
+		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
+		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
+		int yposneg = ToInt(ORIGIN.y - value * denominator);
 		// Positive x-axis
 		pDC->SetPixel(xpos, ypos, clrCotanColor);
 		// Negative x-axis
@@ -765,7 +772,7 @@ void DrawExp( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrExp
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	int EndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = 0; i <= EndX; i += deltai )
 	{
@@ -775,10 +782,10 @@ void DrawExp( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrExp
 
 		// 0.1 mm 
 		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ORIGIN.y + value * denominator;
-		int xpos = ORIGIN.x +  i *PI/180 * denominator  ;
-		int xposneg = ORIGIN.x - i * PI/180 * denominator;
-		int yposneg = ORIGIN.y + valueneg * denominator;
+		int ypos = ToInt(ORIGIN.y + value * denominator);
+		int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
+		int xposneg = ToInt(ORIGIN.x - i * PI/180 * denominator);
+		int yposneg = ToInt(ORIGIN.y + valueneg * denominator);
 		// Positive x-axis
 		pDC->SetPixel(xpos, ypos, clrExpColor);
 		// Negative x-axis
@@ -845,7 +852,7 @@ void DrawLN( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrLNCo
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	int EndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = 0; i <= EndX; i += deltai )
 	{
@@ -855,8 +862,8 @@ void DrawLN( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrLNCo
 
 		// 0.1 mm 
 		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ORIGIN.y + value * denominator;
-		int xpos = ORIGIN.x +  i *PI/180 * denominator  ;
+		int ypos = ToInt(ORIGIN.y + value * denominator);
+		int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
 		// int xposneg = ORIGIN.x - i * PI/180 * denominator;
 		// int yposneg = ORIGIN.y + valueneg * denominator;
 		// Positive x-axis
@@ -931,15 +938,15 @@ void DrawArcsine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF cl
 	double valueneg = 0.0;
 	double valuet = 0.0;
 	double valuenegt = 0.0;
-	// int EndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight - PI*denominator ;
+	int nEndY = ToInt(-nHalfHeight - PI*denominator );
 	CString strTemp;
 	
 	
 	
-	int nCount = nEndY / (PI*denominator) ;
+	int nCount = ToInt(nEndY / (PI*denominator)) ;
 	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
 	// AfxMessageBox(strTemp);
 	
@@ -954,12 +961,12 @@ void DrawArcsine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF cl
 			
 			// 0.1 mm 
 			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ORIGIN.y + value * denominator;
-			int ytpos = ORIGIN.y + valuet * denominator;
-			int xpos = ORIGIN.x +  i *PI/180 * denominator  ;
-			int xposneg = ORIGIN.x - i * PI/180 * denominator;
-			int yposneg = ORIGIN.y + valueneg * denominator;
-			int ytposneg = ORIGIN.y + valuenegt * denominator;
+			int ypos = ToInt(ORIGIN.y + value * denominator);
+			int ytpos = ToInt(ORIGIN.y + valuet * denominator);
+			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
+			int xposneg = ToInt(ORIGIN.x - i * PI/180 * denominator);
+			int yposneg = ToInt(ORIGIN.y + valueneg * denominator);
+			int ytposneg = ToInt(ORIGIN.y + valuenegt * denominator);
 			//  Positive x-axis
 			if ( xpos > 0 )
 			pDC->SetPixel(xpos, ypos, clrArcsineColor);
@@ -1044,15 +1051,15 @@ void DrawArccosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF 
 	double valueneg = 0.0;
 	double valuet = 0.0;
 	double valuenegt = 0.0;
-	// int EndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
+	int nEndY = ToInt(-nHalfHeight -0.7 * denominator);
 	CString strTemp;
 	
 	
 	
-	int nCount = nEndY / (PI*denominator) ;
+	int nCount = ToInt(nEndY / (PI * denominator)) ;
 	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
 	// AfxMessageBox(strTemp);
 	
@@ -1067,12 +1074,12 @@ void DrawArccosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF 
 			
 			// 0.1 mm 
 			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ORIGIN.y + value * denominator;
-			int ytpos = ORIGIN.y + valuet * denominator;
-			int xpos = ORIGIN.x +  i *PI/180 * denominator  ;
-			int xposneg = ORIGIN.x - i * PI/180 * denominator;
-			int yposneg = ORIGIN.y + valueneg * denominator;
-			int ytposneg = ORIGIN.y + valuenegt * denominator;
+			int ypos = ToInt(ORIGIN.y + value * denominator);
+			int ytpos = ToInt(ORIGIN.y + valuet * denominator);
+			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
+			int xposneg = ToInt(ORIGIN.x - i * PI/180 * denominator);
+			int yposneg = ToInt(ORIGIN.y + valueneg * denominator);
+			int ytposneg = ToInt(ORIGIN.y + valuenegt * denominator);
 			//  Positive x-axis
 			pDC->SetPixel(xpos, ypos, clrArccosineColor);
 			// Negative x-axis
@@ -1146,16 +1153,15 @@ void DrawArctan ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF cl
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	double j = 0.0;
 	int n = 0;
 	double value = 0.0;
-	int nEndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
+	int nEndY = ToInt(-nHalfHeight - 0.7 * denominator);
 	CString strTemp;	
 	
-	int nCount = nEndY / (PI*denominator) ;
+	int nCount = ToInt(nEndY / (PI * denominator)) ;
 	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
 	// AfxMessageBox(strTemp);
 	
@@ -1168,8 +1174,8 @@ void DrawArctan ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF cl
 			
 			// 0.1 mm 
 			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ORIGIN.y + value * denominator;
-			int xpos = ORIGIN.x +  i *PI/180 * denominator  ;
+			int ypos = ToInt(ORIGIN.y + value * denominator);
+			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
 			pDC->SetPixel(xpos, ypos, clrArctanColor);
 			
 		}
@@ -1249,13 +1255,13 @@ void DrawArccotan ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF 
 	double j = 0.0;
 	int n = 0;
 	double value = 0.0;
-	int nEndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
+	int nEndY = ToInt(-nHalfHeight - 0.7 * denominator);
 	CString strTemp;	
 	
-	int nCount = nEndY / (PI*denominator) ;
+	int nCount = ToInt(nEndY / (PI * denominator)) ;
 	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
 	// AfxMessageBox(strTemp);
 	
@@ -1268,8 +1274,8 @@ void DrawArccotan ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF 
 			
 			// 0.1 mm 
 			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ORIGIN.y + value * denominator;
-			int xpos = ORIGIN.x +  i *PI/180 * denominator  ;
+			int ypos = ToInt(ORIGIN.y + value * denominator);
+			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
 			pDC->SetPixel(xpos, ypos, clrArccotanColor);
 			
 		}
@@ -1336,25 +1342,15 @@ void DrawHyperbolicSine ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COL
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
 	double value = 0.0;
-	int nEndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
-	CString strTemp;	
-	
-	int nCount = nEndY / (PI*denominator) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = -nEndX; i <= nEndX ; i += deltai)
 	{
 		value = sinh( i * PI / 180);
 
-		int xpos = ORIGIN.x + i*PI / 180 * denominator;
-		int ypos = ORIGIN.y + value * denominator;
+		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
+		int ypos = ToInt(ORIGIN.y + value * denominator);
 		
 		pDC->SetPixel( xpos, ypos, clrHyperbolicSine);
 	}
@@ -1419,25 +1415,15 @@ void DrawHyperbolicCosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, CO
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
 	double value = 0.0;
-	int nEndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
-	CString strTemp;	
-	
-	int nCount = nEndY / (PI*denominator) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = -nEndX; i <= nEndX ; i += deltai)
 	{
 		value = cosh( i * PI / 180);
 
-		int xpos = ORIGIN.x + i*PI / 180 * denominator;
-		int ypos = ORIGIN.y + value * denominator;
+		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
+		int ypos = ToInt(ORIGIN.y + value * denominator);
 		
 		pDC->SetPixel( xpos, ypos, clrHyperbolicCosine);
 	}
@@ -1502,25 +1488,15 @@ void DrawHyperbolicTan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLOR
 	double i = 0.0;
 	double deltai = 0.01;
 	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
 	double value = 0.0;
-	int nEndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
-	CString strTemp;	
-	
-	int nCount = nEndY / (PI*denominator) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	for ( i = -nEndX; i <= nEndX ; i += deltai)
 	{
 		value = tanh( i * PI / 180);
 
-		int xpos = ORIGIN.x + i*PI / 180 * denominator;
-		int ypos = ORIGIN.y + value * denominator;
+		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
+		int ypos = ToInt(ORIGIN.y + value * denominator);
 		
 		pDC->SetPixel( xpos, ypos, clrHyperbolicTan);
 	}
@@ -1592,22 +1568,22 @@ void DrawHyperbolicCotan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COL
 	double j = 0.0;
 	int n = 0;
 	double value = 0.0;
-	int nEndX = 180* ( rcClient.Width() / 2 ) / (PI * denominator) -0.05 * denominator;
+	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
 
 	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = -nHalfHeight -0.7 * denominator ;
+	int nEndY = ToInt(-nHalfHeight - 0.7 * denominator);
 	CString strTemp;	
 	
-	int nCount = nEndY / (PI*denominator) ;
+	int nCount = ToInt(nEndY / (PI * denominator)) ;
 	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
 	// AfxMessageBox(strTemp);
-
+	
 	for ( i = -nEndX; i <= nEndX ; i += deltai)
 	{
 		value = coth( i * PI / 180);
 
-		int xpos = ORIGIN.x + i*PI / 180 * denominator;
-		int ypos = ORIGIN.y + value * denominator;
+		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
+		int ypos = ToInt(ORIGIN.y + value * denominator);
 		
 		pDC->SetPixel( xpos, ypos, clrHyperbolicCotan);
 	}
