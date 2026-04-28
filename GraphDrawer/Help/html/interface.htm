@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GraphDrawer – User Interface</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 20px 30px; color: #222; }
+  h1   { color: #1a5fa8; border-bottom: 2px solid #1a5fa8; padding-bottom: 6px; }
+  h2   { color: #1a5fa8; margin-top: 24px; }
+  a    { color: #1a5fa8; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #e8f0fb; }
+</style>
+</head>
+<body>
+<h1>User Interface</h1>
+
+<h2>Main Window</h2>
+<p>The main window displays the Cartesian coordinate system and all enabled function
+graphs.  It supports scrolling (scroll bars) and print preview.</p>
+
+<h2>Menu Bar</h2>
+<table>
+  <tr><th>Menu</th><th>Item</th><th>Description</th></tr>
+  <tr><td>File</td><td>New / Open / Save / Save As</td><td>Document file operations (*.gra)</td></tr>
+  <tr><td>File</td><td>Print / Print Preview / Print Setup</td><td>Printing support</td></tr>
+  <tr><td>Draw</td><td>Draw Options…</td><td>Opens the Draw Options dialog</td></tr>
+  <tr><td>View</td><td>Toolbar / Status Bar</td><td>Toggle toolbar and status bar visibility</td></tr>
+  <tr><td>View</td><td>Draw Functions</td><td>Show/hide the Draw Functions palette</td></tr>
+  <tr><td>Help</td><td>About GraphDrawer…</td><td>Version information</td></tr>
+</table>
+
+<h2>Toolbar</h2>
+<p>The toolbar provides quick access to New, Open, Draw Options, Save, Cut, Copy,
+Paste, Print and About.</p>
+
+<h2>Status Bar</h2>
+<p>The status bar shows the current coordinate axis size (half-widths in logical
+units) on the right side.</p>
+
+<h2>Draw Functions Palette</h2>
+<p>A floating, always-visible panel containing:</p>
+<ul>
+  <li>A text field for the custom expression (<strong>y =</strong>).</li>
+  <li>A <strong>Draw Custom Function</strong> checkbox to enable plotting of the expression.</li>
+  <li>Individual checkboxes for 14 built-in functions.</li>
+  <li><strong>OK</strong> — applies all current checkbox settings and starts drawing.</li>
+  <li><strong>Cancel</strong> — hides the palette (use <strong>View › Draw Functions</strong> to reopen).</li>
+</ul>
+
+<p>Checking or unchecking any individual function checkbox immediately updates the
+graph without needing to press OK.</p>
+</body>
+</html>

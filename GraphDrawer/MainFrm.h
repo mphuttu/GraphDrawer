@@ -53,6 +53,7 @@ public:
 	afx_msg void OnViewDrawfunctions();
 	afx_msg void OnUpdateViewDrawfunctions(CCmdUI *pCmdUI);
 	afx_msg void OnActivateApp(BOOL bActive, DWORD dwThreadID);
+	afx_msg void OnHelpContents();
 };
 
 

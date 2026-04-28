@@ -2,6 +2,9 @@
 // GraphDrawerDoc.h : interface of the CGraphDrawerDoc class
 //
 #include "DrawOptionsDialog.h"
+#include "ExpressionParser.h"
+#include <vector>
+#include <utility>
 
 #pragma once
 struct DrawOptionsData;
@@ -81,6 +84,41 @@ public:
 	BOOL m_bDrawHyperbolicTan;
 	BOOL m_bDrawHyperbolicCotan;
 	COLORREF m_clrBkgndColor;
+
+	// -----------------------------------------------------------------------
+	// Custom expression  y = f(x)
+	// -----------------------------------------------------------------------
+	BOOL    m_bDrawCustomFunction;
+	CString m_strCustomExpression;
+	double  m_dCustomRangeStart;   // x range [a, b] used when plotting
+	double  m_dCustomRangeEnd;
+
+	// Parsed math-coordinate points produced by the worker thread.
+	// Protected by m_csCustomPoints.
+	struct MathPoint { double x, y; };
+	std::vector<MathPoint>  m_vecCustomPoints;
+	CCriticalSection        m_csCustomPoints;
+
+	// Call this from the dialog when the expression or the enable-flag changes.
+	// Starts (or restarts) the background computation thread.
+	void SetCustomExpression(const CString& expr, BOOL bDraw,
+	                         double xStart = -20.0, double xEnd = 20.0);
+
+private:
+	// Worker thread --------------------------------------------------------
+	volatile BOOL  m_bCancelDraw;   // set to TRUE to ask the thread to stop
+	CWinThread*    m_pDrawThread;   // NULL when idle
+
+	struct ThreadParams
+	{
+		CGraphDrawerDoc* pDoc;
+		CString          strExpr;
+		double           xStart;
+		double           xEnd;
+		double           xStep;
+	};
+
+	static UINT DrawThreadProc(LPVOID pParam);
 };
 
 void DrawCoordinateAxes(CDC* pDC, BOOL bShowTicks, int nTicksInterval,
@@ -119,3 +157,6 @@ void DrawHyperbolicTan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLOR
 double coth(double x);
 
 void DrawHyperbolicCotan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrHyperbolicCotan);
+
+void DrawCustomFunction( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect,
+                         COLORREF clrColor, CGraphDrawerDoc* pDoc);

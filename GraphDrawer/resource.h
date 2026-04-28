@@ -42,16 +42,20 @@
 #define IDC_BACKGROUNDCOLORSTATIC       1030
 #define IDC_BACKGROUNDMFCCOLORBUTTON    1031
 #define IDC_BKGNDMFCCOLORBUTTON         1031
+#define IDC_DRAWCUSTOMCHECK             1032
+#define IDC_RANGEEDIT_FROM              1033
+#define IDC_RANGEEDIT_TO                1034
 #define ID_DRAW_DRAWOPTIONS             32771
 #define ID_VIEW_DRAWFUNCTIONS           32773
+#define ID_HELP_CONTENTS                32774
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        313
-#define _APS_NEXT_COMMAND_VALUE         32774
-#define _APS_NEXT_CONTROL_VALUE         1032
+#define _APS_NEXT_COMMAND_VALUE         32775
+#define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
 #endif

@@ -19,6 +19,19 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+	// Custom expression
+	CString m_strExpression;
+	BOOL    m_bDrawCustomFunction;
+	double  m_dRangeStart;   // x range lower bound
+	double  m_dRangeEnd;     // x range upper bound
+	afx_msg void OnClickedDrawcustomcheck();
+	afx_msg void OnChangeExpressionEdit();
+
+	// Modeless dialog overrides — do not destroy the window on OK/Cancel
+	virtual void OnOK() override;
+	virtual void OnCancel() override;
+	virtual BOOL OnInitDialog() override;
+
 	BOOL m_bDrawSine;
 	afx_msg void OnClickedDrawsinecheck();
 	BOOL m_bDrawCosine;

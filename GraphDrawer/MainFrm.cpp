@@ -22,6 +22,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_COORDSIZE, OnUpdateCR)
 	ON_COMMAND(ID_VIEW_DRAWFUNCTIONS, &CMainFrame::OnViewDrawfunctions)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_DRAWFUNCTIONS, &CMainFrame::OnUpdateViewDrawfunctions)
+	ON_COMMAND(ID_HELP_CONTENTS, &CMainFrame::OnHelpContents)
 	ON_WM_ACTIVATEAPP()
 END_MESSAGE_MAP()
 
@@ -70,11 +71,16 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
 
-	// Create the draw functions dialog window
+	// Create the draw functions dialog window.
+	// Position it at a safe offset so it does not cover the menu bar.
 	m_wndDrawFunctionsDialog.Create(IDD_DRAWFUNCTIONSDIALOG);
-	SetDrawFuncVisible(TRUE);
 	m_bDrawFuncVisible = TRUE;
-	m_wndDrawFunctionsDialog.SetWindowPos(&wndTopMost, 0,0,0,0, SWP_NOMOVE | SWP_NOSIZE);
+	// Place the palette to the right of / below the toolbar area.
+	// SWP_NOZORDER keeps it as a regular window (not always-on-top) so the
+	// menu remains fully accessible.
+	m_wndDrawFunctionsDialog.SetWindowPos(NULL, 10, 200, 0, 0,
+		SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+	SetDrawFuncVisible(TRUE);
 	
 	return 0;
 }
@@ -151,6 +157,34 @@ void CMainFrame::OnUpdateViewDrawfunctions(CCmdUI *pCmdUI)
 		pCmdUI->SetCheck(m_bDrawFuncVisible ? 1 : 0 );
 }
 
+
+void CMainFrame::OnHelpContents()
+{
+	// Build path: <folder containing the exe>\Help\GraphDrawer.chm
+	TCHAR szPath[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, szPath, MAX_PATH);
+
+	// Trim the exe filename to get the directory
+	TCHAR* pLastSlash = _tcsrchr(szPath, _T('\\'));
+	if (pLastSlash)
+	{
+		_tcscpy_s(pLastSlash + 1,
+		          MAX_PATH - static_cast<int>(pLastSlash - szPath) - 1,
+		          _T("Help\\GraphDrawer.chm"));
+	}
+
+	// Open the help file; ShellExecute picks the default CHM viewer.
+	HINSTANCE hResult = ShellExecute(
+		GetSafeHwnd(), _T("open"), szPath, NULL, NULL, SW_SHOWNORMAL);
+
+	if (reinterpret_cast<INT_PTR>(hResult) <= 32)
+	{
+		AfxMessageBox(
+			_T("Could not open the help file.\n"
+			   "Make sure Help\\GraphDrawer.chm exists next to the application."),
+			MB_OK | MB_ICONWARNING);
+	}
+}
 
 void CMainFrame::OnActivateApp(BOOL bActive, DWORD dwThreadID)
 {

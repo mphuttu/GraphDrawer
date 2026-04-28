@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GraphDrawer – Custom Expression y = f(x)</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 20px 30px; color: #222; }
+  h1   { color: #1a5fa8; border-bottom: 2px solid #1a5fa8; padding-bottom: 6px; }
+  h2   { color: #1a5fa8; margin-top: 24px; }
+  h3   { color: #333; margin-top: 18px; }
+  a    { color: #1a5fa8; }
+  code { background: #f3f3f3; border: 1px solid #ddd; padding: 1px 5px; border-radius: 3px;
+         font-family: Consolas, monospace; font-size: 0.95em; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #e8f0fb; }
+  .note { background: #eef4ff; border-left: 4px solid #1a5fa8; padding: 8px 14px; margin: 14px 0; }
+  .warn { background: #fff8e8; border-left: 4px solid #e6a800; padding: 8px 14px; margin: 14px 0; }
+</style>
+</head>
+<body>
+<h1>Custom Expression  y = f(x)</h1>
+
+<p>GraphDrawer can plot any mathematical expression of the form <strong>y = f(x)</strong>
+where <code>x</code> is the independent variable.  Computation runs in a background
+thread so the user interface stays responsive.</p>
+
+<h2>How to Use</h2>
+<ol>
+  <li>In the <em>Draw Functions</em> palette, type your expression in the
+      <strong>y =</strong> text field.<br>
+      Example: <code>x^2 - x + 1</code></li>
+  <li>Tick the <strong>Draw Custom Function</strong> checkbox — or press
+      <strong>OK</strong> to apply all settings at once.</li>
+  <li>The graph appears in golden/yellow after a brief computation.</li>
+</ol>
+
+<div class="note">
+  Changing the expression text while the checkbox is ticked immediately restarts
+  the computation and redraws the graph.
+</div>
+
+<h2>Expression Syntax</h2>
+
+<h3>Operators</h3>
+<table>
+  <tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr>
+  <tr><td><code>+</code></td><td>Addition</td><td><code>x + 1</code></td></tr>
+  <tr><td><code>-</code></td><td>Subtraction / unary negation</td><td><code>-x</code>, <code>x - 2</code></td></tr>
+  <tr><td><code>*</code></td><td>Multiplication</td><td><code>3*x</code></td></tr>
+  <tr><td><code>/</code></td><td>Division</td><td><code>x / (x+1)</code></td></tr>
+  <tr><td><code>^</code></td><td>Power (right-associative)</td><td><code>x^3</code>, <code>2^x</code></td></tr>
+</table>
+
+<h3>Built-in Constants</h3>
+<table>
+  <tr><th>Name</th><th>Value</th></tr>
+  <tr><td><code>pi</code></td><td>3.14159265358979…</td></tr>
+  <tr><td><code>e</code></td><td>2.71828182845905…</td></tr>
+</table>
+
+<h3>Built-in Functions</h3>
+<table>
+  <tr><th>Function</th><th>Description</th><th>Domain</th></tr>
+  <tr><td><code>sin(x)</code></td><td>Sine (radians)</td><td>all x</td></tr>
+  <tr><td><code>cos(x)</code></td><td>Cosine (radians)</td><td>all x</td></tr>
+  <tr><td><code>tan(x)</code></td><td>Tangent (radians)</td><td>x ≠ π/2 + nπ</td></tr>
+  <tr><td><code>asin(x)</code> or <code>arcsin(x)</code></td><td>Inverse sine</td><td>−1 ≤ x ≤ 1</td></tr>
+  <tr><td><code>acos(x)</code> or <code>arccos(x)</code></td><td>Inverse cosine</td><td>−1 ≤ x ≤ 1</td></tr>
+  <tr><td><code>atan(x)</code> or <code>arctan(x)</code></td><td>Inverse tangent</td><td>all x</td></tr>
+  <tr><td><code>sinh(x)</code></td><td>Hyperbolic sine</td><td>all x</td></tr>
+  <tr><td><code>cosh(x)</code></td><td>Hyperbolic cosine</td><td>all x</td></tr>
+  <tr><td><code>tanh(x)</code></td><td>Hyperbolic tangent</td><td>all x</td></tr>
+  <tr><td><code>exp(x)</code></td><td>e raised to the power x</td><td>all x</td></tr>
+  <tr><td><code>log(x)</code> or <code>ln(x)</code></td><td>Natural logarithm</td><td>x &gt; 0</td></tr>
+  <tr><td><code>log10(x)</code></td><td>Logarithm base 10</td><td>x &gt; 0</td></tr>
+  <tr><td><code>sqrt(x)</code></td><td>Square root</td><td>x ≥ 0</td></tr>
+  <tr><td><code>abs(x)</code></td><td>Absolute value</td><td>all x</td></tr>
+  <tr><td><code>sign(x)</code></td><td>Sign: −1, 0, or 1</td><td>all x</td></tr>
+  <tr><td><code>floor(x)</code></td><td>Round down to integer</td><td>all x</td></tr>
+  <tr><td><code>ceil(x)</code></td><td>Round up to integer</td><td>all x</td></tr>
+  <tr><td><code>round(x)</code></td><td>Round to nearest integer</td><td>all x</td></tr>
+</table>
+
+<h2>Examples</h2>
+<table>
+  <tr><th>Expression</th><th>Description</th></tr>
+  <tr><td><code>x^2 - x + 1</code></td><td>Parabola</td></tr>
+  <tr><td><code>x^3</code></td><td>Cubic</td></tr>
+  <tr><td><code>x * sin(x) + cos(x) - exp(1/x)</code></td><td>Mixed expression</td></tr>
+  <tr><td><code>sin(x) / x</code></td><td>Sinc-like function (undefined at x=0)</td></tr>
+  <tr><td><code>exp(-x^2)</code></td><td>Gaussian bell curve</td></tr>
+  <tr><td><code>sqrt(abs(x)) * sign(x)</code></td><td>Signed square root</td></tr>
+  <tr><td><code>2^x</code></td><td>Exponential growth base 2</td></tr>
+  <tr><td><code>(x^2 - 1) / (x - 1)</code></td><td>Rational expression (hole at x=1)</td></tr>
+</table>
+
+<div class="warn">
+  <strong>Note on domain errors:</strong>  Points where the expression is undefined
+  (e.g. <code>log(-1)</code>, <code>sqrt(-4)</code>, division by zero) are simply
+  skipped — the curve will have a gap at those locations.
+</div>
+
+<h2>Plotting Range and Resolution</h2>
+<p>The custom expression is evaluated for x ∈ [−20, +20] with a step of 0.0005,
+giving 80 000 sample points.  The result is plotted using connected line segments;
+large discontinuities (asymptotes) automatically lift the pen.</p>
+</body>
+</html>

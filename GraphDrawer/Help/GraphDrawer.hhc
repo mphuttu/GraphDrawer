@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+</HEAD>
+<BODY>
+<OBJECT type="text/site properties">
+  <param name="ImageType" value="Folder">
+</OBJECT>
+<UL>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="Overview">
+    <param name="Local" value="html\overview.htm">
+  </OBJECT>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="User Interface">
+    <param name="Local" value="html\interface.htm">
+  </OBJECT>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="Built-in Functions">
+    <param name="Local" value="html\drawing_functions.htm">
+  </OBJECT>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="Custom Expression y = f(x)">
+    <param name="Local" value="html\custom_expression.htm">
+  </OBJECT>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="Draw Options">
+    <param name="Local" value="html\draw_options.htm">
+  </OBJECT>
+  <LI> <OBJECT type="text/sitemap">
+    <param name="Name" value="Keyboard Shortcuts">
+    <param name="Local" value="html\keyboard.htm">
+  </OBJECT>
+</UL>
+</BODY>
+</HTML>

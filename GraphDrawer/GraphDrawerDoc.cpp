@@ -11,9 +11,12 @@
 #include "GraphDrawerDoc.h"
 #include "DrawOptionsDialog.h"
 #include "DrawFunctionsDialog.h"
+#include "ExpressionParser.h"
 
 #include <propkey.h>
 #include <cmath>
+#include <vector>
+#include <utility>
 
 namespace
 {
@@ -59,10 +62,25 @@ CGraphDrawerDoc::CGraphDrawerDoc() : m_sizDoc(850,1100)
 	
 	// Background color
 	m_DrawOptionsData.clrBkgndColor = RGB(96, 96, 96);
+
+	// Custom expression
+	m_bDrawCustomFunction  = FALSE;
+	m_strCustomExpression  = _T("");
+	m_dCustomRangeStart    = -20.0;
+	m_dCustomRangeEnd      =  20.0;
+	m_bCancelDraw          = FALSE;
+	m_pDrawThread          = NULL;
 }
 
 CGraphDrawerDoc::~CGraphDrawerDoc()
 {
+	// Ask any running worker thread to stop and wait for it.
+	m_bCancelDraw = TRUE;
+	if (m_pDrawThread != NULL)
+	{
+		WaitForSingleObject(m_pDrawThread->m_hThread, 3000);
+		m_pDrawThread = NULL;
+	}
 }
 
 BOOL CGraphDrawerDoc::OnNewDocument()
@@ -366,6 +384,202 @@ CSize& CGraphDrawerDoc::GetDocSize(void)
 {
 	//TODO: insert return statement here
 	return m_sizDoc;
+}
+
+
+// ---------------------------------------------------------------------------
+// Custom expression  y = f(x)  —  thread-based computation
+// ---------------------------------------------------------------------------
+
+// Worker thread: evaluates the expression over the x-range and caches the
+// resulting (x, y) math-coordinate pairs in m_vecCustomPoints.
+// When finished it posts WM_APP to the main window so the view redraws.
+UINT CGraphDrawerDoc::DrawThreadProc(LPVOID pParam)
+{
+	ThreadParams* p = reinterpret_cast<ThreadParams*>(pParam);
+	CGraphDrawerDoc* pDoc = p->pDoc;
+
+	try
+	{
+		CExpressionParser parser;
+		if (!parser.Parse(p->strExpr))
+		{
+			delete p;
+			return 1;
+		}
+
+		std::vector<MathPoint> pts;
+		pts.reserve(static_cast<size_t>((p->xEnd - p->xStart) / p->xStep) + 1);
+
+		for (double x = p->xStart; x <= p->xEnd; x += p->xStep)
+		{
+			if (pDoc->m_bCancelDraw)
+				break;
+
+			double y = 0.0;
+			if (parser.Evaluate(x, y))
+				pts.push_back({ x, y });
+		}
+
+		if (!pDoc->m_bCancelDraw)
+		{
+			CSingleLock lock(&pDoc->m_csCustomPoints, TRUE);
+			pDoc->m_vecCustomPoints = std::move(pts);
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		// Log to debug output; do not crash the application.
+		CString msg;
+		msg.Format(_T("DrawThreadProc exception: %S"), ex.what());
+		TRACE(msg);
+	}
+	catch (...)
+	{
+		TRACE(_T("DrawThreadProc: unknown exception caught.\n"));
+	}
+
+	delete p;
+
+	// Ask the main window to trigger a repaint now that the data is ready.
+	CWnd* pMainWnd = AfxGetMainWnd();
+	if (pMainWnd && !pDoc->m_bCancelDraw)
+		pMainWnd->PostMessage(WM_APP, 0, 0);
+
+	return 0;
+}
+
+// Called by the dialog whenever the expression or the enable-flag changes.
+void CGraphDrawerDoc::SetCustomExpression(const CString& expr, BOOL bDraw,
+	double xStart /*= -20.0*/, double xEnd /*= 20.0*/)
+{
+	m_bDrawCustomFunction = bDraw;
+	m_strCustomExpression = expr;
+	m_dCustomRangeStart   = xStart;
+	m_dCustomRangeEnd     = xEnd;
+
+	// Cancel any currently-running computation.
+	m_bCancelDraw = TRUE;
+	if (m_pDrawThread != NULL)
+	{
+		WaitForSingleObject(m_pDrawThread->m_hThread, 2000);
+		m_pDrawThread = NULL;
+	}
+	m_bCancelDraw = FALSE;
+
+	if (!bDraw || expr.IsEmpty())
+	{
+		CSingleLock lock(&m_csCustomPoints, TRUE);
+		m_vecCustomPoints.clear();
+		UpdateAllViews(NULL);
+		return;
+	}
+
+	// Sanity-check the range so the worker thread can never get invalid params.
+	if (!_finite(xStart) || !_finite(xEnd) || xStart >= xEnd)
+	{
+		AfxMessageBox(_T("Invalid x range: start must be a finite number less than end."),
+		              MB_OK | MB_ICONWARNING);
+		m_bDrawCustomFunction = FALSE;
+		return;
+	}
+
+	// Quickly validate the expression before starting a thread.
+	CExpressionParser test;
+	if (!test.Parse(expr))
+	{
+		AfxMessageBox(_T("Expression error:\n") + test.GetError(), MB_OK | MB_ICONWARNING);
+		m_bDrawCustomFunction = FALSE;
+		return;
+	}
+
+	// Launch worker thread.  The range [-20, +20] with step 0.0005 gives
+	// 80 000 sample points — enough detail for any reasonable expression
+	// without being noticeably slow.
+	ThreadParams* params  = new ThreadParams;
+	params->pDoc          = this;
+	params->strExpr       = expr;
+	params->xStart        = xStart;
+	params->xEnd          = xEnd;
+	// Adapt step to always sample ~80 000 points regardless of range width.
+	{
+		double range = xEnd - xStart;
+		double step  = range / 80000.0;
+		if (step < 1e-10) step = 1e-10;
+		params->xStep = step;
+	}
+
+	m_pDrawThread = AfxBeginThread(DrawThreadProc, params,
+		THREAD_PRIORITY_BELOW_NORMAL, 0, CREATE_SUSPENDED);
+	if (m_pDrawThread)
+	{
+		m_pDrawThread->m_bAutoDelete = TRUE;
+		m_pDrawThread->ResumeThread();
+	}
+	else
+	{
+		delete params;
+	}
+}
+
+// Draw the pre-computed custom-function points onto the DC.
+// Called from CGraphDrawerView::OnDraw() with the same coordinate system
+// used by all the other Draw* functions.
+void DrawCustomFunction(CDC* pDC, int nTicksInterval, CRect /*m_rcPrintRect*/,
+	COLORREF clrColor,
+	CGraphDrawerDoc* pDoc)
+{
+	if (!pDoc->m_bDrawCustomFunction)
+		return;
+
+	CRect rcClient;
+	HDC hDC = *pDC;
+	HWND hWnd = WindowFromDC(hDC);
+	GetClientRect(hWnd, &rcClient);
+	pDC->DPtoLP(&rcClient);
+
+	const int nHalfWidth  = rcClient.Width()  / 2;
+	const int nHalfHeight = rcClient.Height() / 2;
+	const CPoint ORIGIN(nHalfWidth, nHalfHeight);
+	const int denom = nTicksInterval;
+
+	CSingleLock lock(&pDoc->m_csCustomPoints, TRUE);
+	const auto& pts = pDoc->m_vecCustomPoints;
+	if (pts.empty())
+		return;
+
+	// Draw as a polyline: collect connected segments, breaking on gaps.
+	bool firstPoint = true;
+	CPoint prev;
+
+	for (const auto& mp : pts)
+	{
+		int px = static_cast<int>(ORIGIN.x + mp.x * denom);
+		int py = static_cast<int>(ORIGIN.y + mp.y * denom);
+
+		// Skip points outside a generous clipping region.
+		if (px < -32000 || px > 32000 || py < -32000 || py > 32000)
+		{
+			firstPoint = true;
+			continue;
+		}
+
+		CPoint cur(px, py);
+		if (firstPoint)
+		{
+			pDC->MoveTo(cur);
+			firstPoint = false;
+		}
+		else
+		{
+			// If the y-jump is huge (discontinuity, e.g. tan asymptote), lift pen.
+			if (abs(cur.y - prev.y) > abs(nHalfHeight) * 2)
+				pDC->MoveTo(cur);
+			else
+				pDC->LineTo(cur);
+		}
+		prev = cur;
+	}
 }
 
 void DrawSine( CDC * pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrSineColor)

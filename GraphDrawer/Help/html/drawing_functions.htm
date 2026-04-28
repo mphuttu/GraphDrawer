@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GraphDrawer – Built-in Functions</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 20px 30px; color: #222; }
+  h1   { color: #1a5fa8; border-bottom: 2px solid #1a5fa8; padding-bottom: 6px; }
+  h2   { color: #1a5fa8; margin-top: 24px; }
+  a    { color: #1a5fa8; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #e8f0fb; }
+  .swatch { display: inline-block; width: 18px; height: 18px; border: 1px solid #999;
+            vertical-align: middle; margin-right: 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>Built-in Functions</h1>
+
+<p>The following functions can be enabled via the <em>Draw Functions</em> palette.
+Each is plotted in a distinct colour.</p>
+
+<table>
+  <tr><th>Checkbox label</th><th>Function</th><th>Colour</th><th>Notes</th></tr>
+  <tr>
+    <td>Draw Sine</td><td>y = sin(x)</td>
+    <td><span class="swatch" style="background:#ff3333;"></span> Red</td>
+    <td>Plotted symmetrically for positive and negative x.</td>
+  </tr>
+  <tr>
+    <td>Draw Cosine</td><td>y = cos(x)</td>
+    <td><span class="swatch" style="background:#33ff33;"></span> Green</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Tangent</td><td>y = tan(x)</td>
+    <td><span class="swatch" style="background:#3399ff;"></span> Blue</td>
+    <td>Asymptotes at x = ±π/2, ±3π/2, …</td>
+  </tr>
+  <tr>
+    <td>Draw Cotangent</td><td>y = cot(x)</td>
+    <td><span class="swatch" style="background:#ff3a00;"></span> Orange-red</td>
+    <td>Asymptotes at x = 0, ±π, …</td>
+  </tr>
+  <tr>
+    <td>Draw Exponent</td><td>y = e<sup>x</sup></td>
+    <td><span class="swatch" style="background:#990000;"></span> Dark red</td>
+    <td>Grows very rapidly for large x.</td>
+  </tr>
+  <tr>
+    <td>Draw Natural Logarithm</td><td>y = ln(x)</td>
+    <td><span class="swatch" style="background:#006666;"></span> Teal</td>
+    <td>Defined only for x &gt; 0.</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Sine</td><td>y = arcsin(x)</td>
+    <td><span class="swatch" style="background:#cc00cc;"></span> Magenta</td>
+    <td>Defined for x ∈ [−1, 1], range [−π/2, π/2].</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Cosine</td><td>y = arccos(x)</td>
+    <td><span class="swatch" style="background:#a7c668;"></span> Yellow-green</td>
+    <td>Defined for x ∈ [−1, 1], range [0, π].</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Tangent</td><td>y = arctan(x)</td>
+    <td><span class="swatch" style="background:#ff8000;"></span> Orange</td>
+    <td>Range (−π/2, π/2).</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Cotangent</td><td>y = arccot(x)</td>
+    <td><span class="swatch" style="background:#f5d929;"></span> Yellow</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Sine</td><td>y = sinh(x)</td>
+    <td><span class="swatch" style="background:#ff3333;"></span> Red</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Cosine</td><td>y = cosh(x)</td>
+    <td><span class="swatch" style="background:#006600;"></span> Dark green</td>
+    <td>Always ≥ 1.</td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Tangent</td><td>y = tanh(x)</td>
+    <td><span class="swatch" style="background:#5a92ae;"></span> Steel blue</td>
+    <td>Range (−1, 1).</td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Cotangent</td><td>y = coth(x)</td>
+    <td><span class="swatch" style="background:#330066;"></span> Purple</td>
+    <td>Asymptote at x = 0.</td>
+  </tr>
+</table>
+</body>
+</html>

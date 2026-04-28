@@ -29,6 +29,7 @@ BEGIN_MESSAGE_MAP(CGraphDrawerView, CScrollView)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_ERASEBKGND()
+	ON_MESSAGE(WM_APP, &CGraphDrawerView::OnCustomFunctionReady)
 END_MESSAGE_MAP()
 
 // CGraphDrawerView construction/destruction
@@ -222,6 +223,16 @@ void CGraphDrawerView::OnDraw(CDC* pDC)
 	// Draw Hyperbolic Tangent
 	if ( pDoc->m_bDrawHyperbolicCotan == TRUE )
 		DrawHyperbolicCotan ( pDC, pDoc->m_nTicksInterval, m_rcPrintRect, RGB( 51, 0, 102) );
+
+	// Draw custom expression  y = f(x)
+	if ( pDoc->m_bDrawCustomFunction == TRUE )
+	{
+		CPen customPen;
+		if ( customPen.CreatePen(PS_SOLID, 1, RGB(255, 200, 0)) )
+			pDC->SelectObject(&customPen);
+		DrawCustomFunction(pDC, pDoc->m_nTicksInterval, m_rcPrintRect,
+			RGB(255, 200, 0), pDoc);
+	}
 
 	// Restore Original device context
 	pDC->RestoreDC(nDC);
@@ -627,4 +638,12 @@ BOOL CGraphDrawerView::OnEraseBkgnd(CDC* pDC)
 
 	return TRUE;
 	// return CScrollView::OnEraseBkgnd(pDC);
+}
+
+// Called via PostMessage(WM_APP) from the worker thread when the custom
+// function computation is complete.  Triggers a repaint.
+LRESULT CGraphDrawerView::OnCustomFunctionReady(WPARAM /*wParam*/, LPARAM /*lParam*/)
+{
+	Invalidate(FALSE);
+	return 0;
 }

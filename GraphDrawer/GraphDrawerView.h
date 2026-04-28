@@ -43,6 +43,7 @@ protected:
 protected:
 	DECLARE_MESSAGE_MAP()
 	virtual void OnPrint(CDC* pDC, CPrintInfo* pInfo);
+	afx_msg LRESULT OnCustomFunctionReady(WPARAM wParam, LPARAM lParam);
 private:
 	CRect m_rcPrintRect;
 public:

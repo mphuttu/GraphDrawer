@@ -338,3 +338,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+# GraphDrawer project-specific
+GraphDrawer/Setup/Output/
+GraphDrawer/Help/GraphDrawer.chm
+GraphDrawer/Debug/
+GraphDrawer/Release/

@@ -17,6 +17,10 @@ IMPLEMENT_DYNAMIC(CDrawFunctionsDialog, CDialog)
 
 CDrawFunctionsDialog::CDrawFunctionsDialog(CWnd* pParent /*=NULL*/)
 	: CDialog(CDrawFunctionsDialog::IDD, pParent)
+	, m_strExpression(_T(""))
+	, m_bDrawCustomFunction(FALSE)
+	, m_dRangeStart(-20.0)
+	, m_dRangeEnd(20.0)
 	, m_bDrawSine(FALSE)
 	, m_bDrawCosine(FALSE)
 	, m_bDrawTan(FALSE)
@@ -42,7 +46,11 @@ CDrawFunctionsDialog::~CDrawFunctionsDialog()
 void CDrawFunctionsDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
-	DDX_Check(pDX, IDC_DRAWSINECHECK, m_bDrawSine);
+	DDX_Text(pDX,  IDC_FUNCEDIT,             m_strExpression);
+	DDX_Check(pDX, IDC_DRAWCUSTOMCHECK,      m_bDrawCustomFunction);
+	DDX_Text(pDX,  IDC_RANGEEDIT_FROM,       m_dRangeStart);
+	DDX_Text(pDX,  IDC_RANGEEDIT_TO,         m_dRangeEnd);
+	DDX_Check(pDX, IDC_DRAWSINECHECK,        m_bDrawSine);
 	DDX_Check(pDX, IDC_DRAWCOSINECHECK, m_bDrawCosine);
 	DDX_Check(pDX, IDC_DRAWTANCHECK, m_bDrawTan);
 	DDX_Check(pDX, IDC_DRAWCOTANCHECK, m_bDrawCotan);
@@ -60,7 +68,9 @@ void CDrawFunctionsDialog::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(CDrawFunctionsDialog, CDialog)
-	ON_BN_CLICKED(IDC_DRAWSINECHECK, &CDrawFunctionsDialog::OnClickedDrawsinecheck)
+	ON_BN_CLICKED(IDC_DRAWCUSTOMCHECK,             &CDrawFunctionsDialog::OnClickedDrawcustomcheck)
+	ON_EN_CHANGE(IDC_FUNCEDIT,                     &CDrawFunctionsDialog::OnChangeExpressionEdit)
+	ON_BN_CLICKED(IDC_DRAWSINECHECK,               &CDrawFunctionsDialog::OnClickedDrawsinecheck)
 	ON_BN_CLICKED(IDC_DRAWCOSINECHECK, &CDrawFunctionsDialog::OnClickedDrawcosinecheck)
 	ON_BN_CLICKED(IDC_DRAWTANCHECK, &CDrawFunctionsDialog::OnClickedDrawtancheck)
 	ON_BN_CLICKED(IDC_DRAWCOTANCHECK, &CDrawFunctionsDialog::OnClickedDrawcotancheck)
@@ -398,4 +408,138 @@ void CDrawFunctionsDialog::OnClickedDrawhyperboliccotangentcheck()
 
 	pDoc->UpdateAllViews(NULL);
 	
+}
+
+
+// ---------------------------------------------------------------------------
+// Custom expression handlers
+// ---------------------------------------------------------------------------
+
+void CDrawFunctionsDialog::OnClickedDrawcustomcheck()
+{
+	CButton* pCheck = (CButton*)GetDlgItem(IDC_DRAWCUSTOMCHECK);
+	m_bDrawCustomFunction = pCheck->GetCheck() ? TRUE : FALSE;
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	// UpdateData returns FALSE (and shows a warning) if a field is non-numeric.
+	if (!UpdateData(TRUE)) return;
+
+	if (m_dRangeStart >= m_dRangeEnd)
+	{
+		AfxMessageBox(_T("Range start must be less than range end."), MB_OK | MB_ICONWARNING);
+		return;
+	}
+
+	pDoc->SetCustomExpression(m_strExpression, m_bDrawCustomFunction,
+	                          m_dRangeStart, m_dRangeEnd);
+}
+
+
+void CDrawFunctionsDialog::OnChangeExpressionEdit()
+{
+	// Only trigger a redraw if custom drawing is already enabled
+	CButton* pCheck = (CButton*)GetDlgItem(IDC_DRAWCUSTOMCHECK);
+	if (!pCheck || !pCheck->GetCheck())
+		return;
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	if (!UpdateData(TRUE)) return;
+
+	if (m_dRangeStart >= m_dRangeEnd)
+		return;  // silent: user is still typing — no popup on every keystroke
+
+	pDoc->SetCustomExpression(m_strExpression, TRUE,
+	                          m_dRangeStart, m_dRangeEnd);
+}
+
+
+// ---------------------------------------------------------------------------
+// Modeless dialog lifecycle
+// ---------------------------------------------------------------------------
+
+// When the dialog is shown (first time or after ShowWindow), sync checkboxes
+// from the document so the UI reflects the current drawing state.
+BOOL CDrawFunctionsDialog::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (!pWnd) return TRUE;
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return TRUE;
+
+	m_bDrawSine             = pDoc->m_bDrawSine;
+	m_bDrawCosine           = pDoc->m_bDrawCosine;
+	m_bDrawTan              = pDoc->m_bDrawTan;
+	m_bDrawCotan            = pDoc->m_bDrawCotan;
+	m_bDrawExp              = pDoc->m_bDrawExp;
+	m_bDrawLN               = pDoc->m_bDrawLN;
+	m_bDrawArcsine          = pDoc->m_bDrawArcsine;
+	m_bDrawArccosine        = pDoc->m_bDrawArccosine;
+	m_bDrawArctan           = pDoc->m_bDrawArctan;
+	m_bDrawArccotan         = pDoc->m_bDrawArccotan;
+	m_bDrawHyperbolicSine   = pDoc->m_bDrawHyperbolicSine;
+	m_bDrawHyperbolicCosine = pDoc->m_bDrawHyperbolicCosine;
+	m_bDrawHyperbolicTan    = pDoc->m_bDrawHyperbolicTan;
+	m_bDrawHyperbolicCotan  = pDoc->m_bDrawHyperbolicCotan;
+	m_bDrawCustomFunction   = pDoc->m_bDrawCustomFunction;
+	m_strExpression         = pDoc->m_strCustomExpression;
+	m_dRangeStart           = pDoc->m_dCustomRangeStart;
+	m_dRangeEnd             = pDoc->m_dCustomRangeEnd;
+
+	UpdateData(FALSE);
+	return TRUE;
+}
+
+// For a modeless dialog OK means "apply all settings and keep the dialog open".
+void CDrawFunctionsDialog::OnOK()
+{
+	// Read all controls; returns FALSE (with a built-in warning) if a field is invalid.
+	if (!UpdateData(TRUE)) return;
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (!pWnd) return;
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	pDoc->m_bDrawSine             = m_bDrawSine;
+	pDoc->m_bDrawCosine           = m_bDrawCosine;
+	pDoc->m_bDrawTan              = m_bDrawTan;
+	pDoc->m_bDrawCotan            = m_bDrawCotan;
+	pDoc->m_bDrawExp              = m_bDrawExp;
+	pDoc->m_bDrawLN               = m_bDrawLN;
+	pDoc->m_bDrawArcsine          = m_bDrawArcsine;
+	pDoc->m_bDrawArccosine        = m_bDrawArccosine;
+	pDoc->m_bDrawArctan           = m_bDrawArctan;
+	pDoc->m_bDrawArccotan         = m_bDrawArccotan;
+	pDoc->m_bDrawHyperbolicSine   = m_bDrawHyperbolicSine;
+	pDoc->m_bDrawHyperbolicCosine = m_bDrawHyperbolicCosine;
+	pDoc->m_bDrawHyperbolicTan    = m_bDrawHyperbolicTan;
+	pDoc->m_bDrawHyperbolicCotan  = m_bDrawHyperbolicCotan;
+
+	// Apply custom expression (also starts background thread if enabled)
+	if (m_dRangeStart >= m_dRangeEnd)
+	{
+		AfxMessageBox(_T("Range start must be less than range end."), MB_OK | MB_ICONWARNING);
+		return;
+	}
+	pDoc->SetCustomExpression(m_strExpression, m_bDrawCustomFunction,
+	                          m_dRangeStart, m_dRangeEnd);
+
+	pDoc->UpdateAllViews(NULL);
+	// Do NOT call CDialog::OnOK() — that would destroy the modeless window.
+}
+
+// Cancel just hides the dialog; settings already applied by individual handlers.
+void CDrawFunctionsDialog::OnCancel()
+{
+	ShowWindow(SW_HIDE);
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (pWnd) pWnd->SetDrawFuncVisible(FALSE);
 }
