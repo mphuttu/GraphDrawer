@@ -84,7 +84,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\x64\</OutDir>
+    <OutDir>$(ProjectDir)Release\x64\</OutDir>
     <IntDir>GraphDrawer\$(Configuration)\x64\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -193,6 +193,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AddCurveDialog.h" />
     <ClInclude Include="DrawFunctionsDialog.h" />
     <ClInclude Include="DrawOptionsDialog.h" />
     <ClInclude Include="GraphDrawer.h" />
@@ -204,6 +205,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AddCurveDialog.cpp" />
     <ClCompile Include="DrawFunctionsDialog.cpp" />
     <ClCompile Include="ExpressionParser.cpp" />
     <ClCompile Include="DrawOptionsDialog.cpp" />

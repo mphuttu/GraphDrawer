@@ -19,7 +19,14 @@ CDrawOptionsDialog::CDrawOptionsDialog(CWnd* pParent /*=NULL*/)
 	, m_nTicksInterval(0)
 	, m_clrAxesColor(RGB(0,0,255))
 	, m_nAxesPenWidth(1)
-	, m_clrBkgndColor(RGB(96, 96, 96) )
+	, m_clrBkgndColor(RGB(96, 96, 96))
+	, m_dXMin(-10.0)
+	, m_dXMax(10.0)
+	, m_dYMin(-10.0)
+	, m_dYMax(10.0)
+	, m_scaleMode(0)
+	, m_scaleX(1.0)
+	, m_scaleY(1.0)	
 {
 
 	
