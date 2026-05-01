@@ -112,15 +112,203 @@ BOOL CGraphDrawerDoc::OnNewDocument()
 
 // CGraphDrawerDoc serialization
 
+// File format version — bump when adding new fields (use the loading 'version'
+// guard below so old files continue to load with sensible defaults).
+static const DWORD GD_FILE_VERSION = 1;
+
 void CGraphDrawerDoc::Serialize(CArchive& ar)
 {
 	if (ar.IsStoring())
 	{
-		// TODO: add storing code here
+		ar << GD_FILE_VERSION;
+
+		// --- DrawOptionsData ---
+		ar << m_DrawOptionsData.m_bCheckStateShowCoordinateAxes;
+		ar << m_DrawOptionsData.m_bCheckStateShowTicks;
+		ar << m_DrawOptionsData.m_bCheckStateShowTicksLabel;
+		ar << m_DrawOptionsData.m_nTicksInterval;
+		ar << m_DrawOptionsData.nIndexThickness;
+		ar << m_DrawOptionsData.strCoordAxesThickness;
+		ar << (DWORD)m_DrawOptionsData.clrCoordColor;
+		ar << (DWORD)m_DrawOptionsData.clrBkgndColor;
+		ar << m_DrawOptionsData.dXMin;
+		ar << m_DrawOptionsData.dXMax;
+		ar << m_DrawOptionsData.dYMin;
+		ar << m_DrawOptionsData.dYMax;
+		ar << m_DrawOptionsData.scaleMode;
+		ar << m_DrawOptionsData.scaleX;
+		ar << m_DrawOptionsData.scaleY;
+		ar << m_DrawOptionsData.logMode;
+
+		// --- Doc-level display state (used directly by the view) ---
+		ar << m_bShowCoordinateAxes;
+		ar << m_bShowTicks;
+		ar << m_bShowTicksLabel;
+		ar << m_nTicksInterval;
+		ar << (DWORD)m_clrAxesColor;
+		ar << m_nAxesPenWidth;
+		ar << (DWORD)m_clrBkgndColor;
+
+		// --- Built-in function visibility flags ---
+		ar << m_bDrawSine;
+		ar << m_bDrawCosine;
+		ar << m_bDrawTan;
+		ar << m_bDrawCotan;
+		ar << m_bDrawExp;
+		ar << m_bDrawLN;
+		ar << m_bDrawArcsine;
+		ar << m_bDrawArccosine;
+		ar << m_bDrawArctan;
+		ar << m_bDrawArccotan;
+		ar << m_bDrawHyperbolicSine;
+		ar << m_bDrawHyperbolicCosine;
+		ar << m_bDrawHyperbolicTan;
+		ar << m_bDrawHyperbolicCotan;
+
+		// --- Custom expression ---
+		ar << m_bDrawCustomFunction;
+		ar << m_strCustomExpression;
+		ar << m_dCustomRangeStart;
+		ar << m_dCustomRangeEnd;
+
+		// --- User-defined curves (definition only; points are recomputed on load) ---
+		{
+			CSingleLock lock(&m_csUserCurves, TRUE);
+			DWORD nCurves = (DWORD)m_vecUserCurves.size();
+			ar << nCurves;
+			for (const UserCurve& c : m_vecUserCurves)
+			{
+				ar << (int)c.type;
+				ar << c.label;
+				ar << c.bVisible;
+				ar << (DWORD)c.color;
+				// y = f(x)
+				ar << c.strExprY;
+				ar << c.xStart;
+				ar << c.xEnd;
+				// parametric
+				ar << c.strExprX;
+				ar << c.strExprYPar;
+				ar << c.tStart;
+				ar << c.tEnd;
+				// polar
+				ar << c.strExprPolar;
+				ar << c.phiStart;
+				ar << c.phiEnd;
+				// implicit
+				ar << c.strExprImplicit;
+				ar << c.xStartImp;
+				ar << c.xEndImp;
+				ar << c.yStartImp;
+				ar << c.yEndImp;
+			}
+		}
 	}
 	else
 	{
-		// TODO: add loading code here
+		DWORD version = 0;
+		ar >> version;
+		if (version > GD_FILE_VERSION)
+		{
+			AfxMessageBox(_T("This file was created with a newer version of GraphDrawer and cannot be opened."));
+			return;
+		}
+
+		// --- DrawOptionsData ---
+		ar >> m_DrawOptionsData.m_bCheckStateShowCoordinateAxes;
+		ar >> m_DrawOptionsData.m_bCheckStateShowTicks;
+		ar >> m_DrawOptionsData.m_bCheckStateShowTicksLabel;
+		ar >> m_DrawOptionsData.m_nTicksInterval;
+		ar >> m_DrawOptionsData.nIndexThickness;
+		ar >> m_DrawOptionsData.strCoordAxesThickness;
+		DWORD dw;
+		ar >> dw; m_DrawOptionsData.clrCoordColor = (COLORREF)dw;
+		ar >> dw; m_DrawOptionsData.clrBkgndColor = (COLORREF)dw;
+		ar >> m_DrawOptionsData.dXMin;
+		ar >> m_DrawOptionsData.dXMax;
+		ar >> m_DrawOptionsData.dYMin;
+		ar >> m_DrawOptionsData.dYMax;
+		ar >> m_DrawOptionsData.scaleMode;
+		ar >> m_DrawOptionsData.scaleX;
+		ar >> m_DrawOptionsData.scaleY;
+		ar >> m_DrawOptionsData.logMode;
+
+		// --- Doc-level display state ---
+		ar >> m_bShowCoordinateAxes;
+		ar >> m_bShowTicks;
+		ar >> m_bShowTicksLabel;
+		ar >> m_nTicksInterval;
+		ar >> dw; m_clrAxesColor = (COLORREF)dw;
+		ar >> m_nAxesPenWidth;
+		ar >> dw; m_clrBkgndColor = (COLORREF)dw;
+
+		// --- Built-in function visibility flags ---
+		ar >> m_bDrawSine;
+		ar >> m_bDrawCosine;
+		ar >> m_bDrawTan;
+		ar >> m_bDrawCotan;
+		ar >> m_bDrawExp;
+		ar >> m_bDrawLN;
+		ar >> m_bDrawArcsine;
+		ar >> m_bDrawArccosine;
+		ar >> m_bDrawArctan;
+		ar >> m_bDrawArccotan;
+		ar >> m_bDrawHyperbolicSine;
+		ar >> m_bDrawHyperbolicCosine;
+		ar >> m_bDrawHyperbolicTan;
+		ar >> m_bDrawHyperbolicCotan;
+
+		// --- Custom expression ---
+		ar >> m_bDrawCustomFunction;
+		ar >> m_strCustomExpression;
+		ar >> m_dCustomRangeStart;
+		ar >> m_dCustomRangeEnd;
+
+		// --- User-defined curves ---
+		DWORD nCurves = 0;
+		ar >> nCurves;
+		{
+			CSingleLock lock(&m_csUserCurves, TRUE);
+			m_vecUserCurves.clear();
+			m_vecUserCurves.reserve(nCurves);
+			for (DWORD i = 0; i < nCurves; ++i)
+			{
+				UserCurve c;
+				int iType;
+				ar >> iType; c.type = (UserCurveType)iType;
+				ar >> c.label;
+				ar >> c.bVisible;
+				ar >> dw; c.color = (COLORREF)dw;
+				// y = f(x)
+				ar >> c.strExprY;
+				ar >> c.xStart;
+				ar >> c.xEnd;
+				// parametric
+				ar >> c.strExprX;
+				ar >> c.strExprYPar;
+				ar >> c.tStart;
+				ar >> c.tEnd;
+				// polar
+				ar >> c.strExprPolar;
+				ar >> c.phiStart;
+				ar >> c.phiEnd;
+				// implicit
+				ar >> c.strExprImplicit;
+				ar >> c.xStartImp;
+				ar >> c.xEndImp;
+				ar >> c.yStartImp;
+				ar >> c.yEndImp;
+				m_vecUserCurves.push_back(std::move(c));
+			}
+		}
+
+		// Recompute curve points from the loaded expressions.
+		RecomputeUserCurves();
+
+		// Restart the custom-expression background thread if needed.
+		if (m_bDrawCustomFunction && !m_strCustomExpression.IsEmpty())
+			SetCustomExpression(m_strCustomExpression, m_bDrawCustomFunction,
+			                    m_dCustomRangeStart, m_dCustomRangeEnd);
 	}
 }
 
