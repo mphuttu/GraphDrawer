@@ -13,7 +13,7 @@ IMPLEMENT_DYNAMIC(CDrawOptionsDialog, CDialog)
 
 CDrawOptionsDialog::CDrawOptionsDialog(CWnd* pParent /*=NULL*/)
 	: CDialog(CDrawOptionsDialog::IDD, pParent)
-	, m_bShowCoordinateAxes(FALSE)	
+	, m_bShowCoordinateAxes(FALSE)
 	, m_bShowTicks(FALSE)
 	, m_bShowTicksLabel(FALSE)
 	, m_nTicksInterval(0)
@@ -28,8 +28,6 @@ CDrawOptionsDialog::CDrawOptionsDialog(CWnd* pParent /*=NULL*/)
 	, m_scaleX(1.0)
 	, m_scaleY(1.0)	
 {
-
-	
 }
 
 CDrawOptionsDialog::~CDrawOptionsDialog()
@@ -47,6 +45,13 @@ void CDrawOptionsDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MFCCOLORBUTTONCOORD, m_wndCoordAxesColor);
 	DDX_Control(pDX, IDC_PENWIDTHCOMBO, m_cbPenWidth);
 	DDX_Control(pDX, IDC_BKGNDMFCCOLORBUTTON, m_wndBkgndColor);
+	DDX_Text(pDX, IDC_XMIN_EDIT, m_dXMin);
+	DDX_Text(pDX, IDC_XMAX_EDIT, m_dXMax);
+	DDX_Text(pDX, IDC_YMIN_EDIT, m_dYMin);
+	DDX_Text(pDX, IDC_YMAX_EDIT, m_dYMax);
+	DDX_Radio(pDX, IDC_SCALE_EQUAL, m_scaleMode);
+	DDX_Text(pDX, IDC_SCALE_X_EDIT, m_scaleX);
+	DDX_Text(pDX, IDC_SCALE_Y_EDIT, m_scaleY);
 }
 
 
@@ -58,6 +63,9 @@ BEGIN_MESSAGE_MAP(CDrawOptionsDialog, CDialog)
 	ON_BN_CLICKED(IDC_MFCCOLORBUTTONCOORD, &CDrawOptionsDialog::OnClickedMfccolorbuttoncoord)
 	ON_CBN_SELCHANGE(IDC_PENWIDTHCOMBO, &CDrawOptionsDialog::OnSelchangePenwidthcombo)
 	ON_BN_CLICKED(IDC_BKGNDMFCCOLORBUTTON, &CDrawOptionsDialog::OnClickedBkgndmfccolorbutton)
+	ON_BN_CLICKED(IDC_SCALE_EQUAL, &CDrawOptionsDialog::OnScaleModeChanged)
+	ON_BN_CLICKED(IDC_SCALE_FREE,  &CDrawOptionsDialog::OnScaleModeChanged)
+	ON_BN_CLICKED(IDC_SCALE_LOG,   &CDrawOptionsDialog::OnScaleModeChanged)
 END_MESSAGE_MAP()
 
 
@@ -154,6 +162,9 @@ BOOL CDrawOptionsDialog::OnInitDialog()
 	// strGetSel.Format(_T("Current selection is %d"), m_cbPenWidth.GetCurSel() );
 	// AfxMessageBox(strGetSel);
 	// m_wndCoordAxesColor.SetColor(RGB(0,0,255));
+	// Piilota yksikköeditboksit jos ei "free scaling"
+	GetDlgItem(IDC_SCALE_X_EDIT)->ShowWindow(m_scaleMode == 1 ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_SCALE_Y_EDIT)->ShowWindow(m_scaleMode == 1 ? SW_SHOW : SW_HIDE);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -217,30 +228,19 @@ void CDrawOptionsDialog::GetData(DrawOptionsData* dr)
 	// Edit boxes
 	dr->m_nTicksInterval = m_nTicksInterval;
 
-	/*
-	// Combo Boxes
-	// PopulatePenWidthCombo();
-	// yourComboBox.SetCurSel(yourComboBox.FindStringExact(0, yourString));
-	// dr->strCoordAxesThickness = 
-	int nIndex = m_cbPenWidth.GetCurSel();
-	// CString strTmp;
-	// strTmp.Format(_T("Combobox index is: %d"), nIndex);
-	// if ( nIndex < 0 ) 
-	//	AfxMessageBox(strTmp);
-	//int nCount = m_cbPenWidth.GetCount();
-
-	if ( nIndex != CB_ERR)
-	{
-		// dr->nIndexThickness = nIndex;
-		m_cbPenWidth.GetLBText( nIndex, dr->strCoordAxesThickness);
-	}
-	*/
-
-	// AfxMessageBox(dr->strCoordAxesThickness);
-	
 	dr->clrCoordColor = m_clrAxesColor;
 	// Background color
 	dr->clrBkgndColor = m_clrBkgndColor;
+
+	// Coordinate range
+	dr->dXMin = m_dXMin;
+	dr->dXMax = m_dXMax;
+	dr->dYMin = m_dYMin;
+	dr->dYMax = m_dYMax;
+	// Scaling
+	dr->scaleMode = m_scaleMode;
+	dr->scaleX = m_scaleX;
+	dr->scaleY = m_scaleY;
 }
 
 void CDrawOptionsDialog::SetData(DrawOptionsData dr)
@@ -252,21 +252,20 @@ void CDrawOptionsDialog::SetData(DrawOptionsData dr)
 
 	// Edit boxes
 	m_nTicksInterval = dr.m_nTicksInterval;
-	
-	/*
-	// Combo boxes
-	// PopulatePenWidthCombo();
-	//CString strTmp(dr.strCoordAxesThickness);
-	// int nIndex = dr.nIndexThickness;
-   m_cbPenWidth.SetCurSel(m_cbPenWidth.FindStringExact(0, dr.strCoordAxesThickness));
-	// int nCount = m_cbPenWidth.GetCount();
-	// if ( nIndex !=CB_ERR )
-	//  m_cbPenWidth.SetCurSel(nIndex);
-	*/
 
 	m_wndCoordAxesColor.SetColor(dr.clrCoordColor);
 	// Background color
 	m_wndBkgndColor.SetColor(dr.clrBkgndColor);
+
+	// Coordinate range
+	m_dXMin = dr.dXMin;
+	m_dXMax = dr.dXMax;
+	m_dYMin = dr.dYMin;
+	m_dYMax = dr.dYMax;
+	// Scaling
+	m_scaleMode = dr.scaleMode;
+	m_scaleX = dr.scaleX;
+	m_scaleY = dr.scaleY;
 }
 
 
@@ -292,4 +291,13 @@ void CDrawOptionsDialog::OnClickedBkgndmfccolorbutton()
 	// TODO: Add your control notification handler code here
 	m_clrBkgndColor = m_wndBkgndColor.GetColor();
 	UpdateData();
+}
+
+void CDrawOptionsDialog::OnScaleModeChanged()
+{
+	// Lue valittu radio-button m_scaleMode:een
+	UpdateData(TRUE);
+	BOOL bFree = (m_scaleMode == 1);
+	GetDlgItem(IDC_SCALE_X_EDIT)->ShowWindow(bFree ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_SCALE_Y_EDIT)->ShowWindow(bFree ? SW_SHOW : SW_HIDE);
 }

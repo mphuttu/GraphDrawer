@@ -10,10 +10,21 @@ coordinate system.
   and the four hyperbolic equivalents).
 - Enter an **arbitrary expression** `y = f(x)` using a recursive-descent expression
   parser that supports all common mathematical operators, functions, and constants.
+- **Parametric curves** — plot `x(t)`, `y(t)` expressions over a given t-range
+  (e.g. a cycloid with `x = a*(t - sin(t))`, `y = a*(1 - cos(t))`).
+- **User-defined curve library** — add multiple `y = f(x)` or parametric curves via
+  the *Add…* button in the Draw Functions palette.  Each curve has its own label,
+  colour, and a checkbox to toggle visibility.
+- **Zoomable / pannable** coordinate view — scroll the mouse wheel to zoom in or out
+  centred on the viewport; drag with the left mouse button to pan; right-click to
+  reset the view to the default range.
+- **Configurable axis range** — set the visible x/y range (min and max) in the
+  *Draw Options* dialog instead of being limited to a fixed ±10 window.
 - **Background thread** computation for custom expressions — the UI stays responsive.
 - Customisable coordinate axes: colour, line thickness, tick marks, and labels.
 - Selectable background colour.
-- Print and print-preview support.
+- Print and print-preview support — output matches the on-screen view exactly,
+  with a file-name header and page-number footer on each page.
 - Builds for both **Win32 (x86)** and **x64** targets.
 
 ## System Requirements
@@ -52,31 +63,72 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
    checkbox to plot it.
 3. To plot a custom expression, type it in the **y =** field and tick
    **Draw Custom Function**.  Press **OK** to apply.
-4. Use **Draw › Draw Options…** to change axis style, tick interval, and colours.
+4. Use **Draw › Draw Options…** to change axis style, tick interval, colours, and
+   the visible coordinate range (x min/max, y min/max).
+
+### Zooming and Panning
+
+| Action | Effect |
+|--------|--------|
+| Mouse wheel up | Zoom in (centred on viewport) |
+| Mouse wheel down | Zoom out |
+| Left-button drag | Pan |
+| Right-click | Reset view to the range set in Draw Options |
+
+### Adding User-Defined Curves
+
+1. Open the **Draw Functions** palette.
+2. Click **Add…** in the *User-Defined Curves* group.
+3. In the dialog that opens:
+   - Choose **y = f(x)** or **Parametric** (x(t), y(t)).
+   - Enter the expression(s), the x- or t-range, an optional label, and a colour.
+   - Click **OK**.
+4. The new curve appears in the checkbox list.  Uncheck it to hide it; click
+   **Remove** to delete it.
+
+### Parametric Curve Examples
+
+| Curve | x(t) | y(t) | t range |
+|-------|------|------|---------|
+| Circle | `cos(t)` | `sin(t)` | 0 … 2π |
+| Cycloid (a = 1) | `t - sin(t)` | `1 - cos(t)` | 0 … 6π |
+| Lissajous | `sin(3*t)` | `sin(2*t + pi/4)` | 0 … 2π |
 
 ### Expression Syntax
 
 | Element | Syntax |
 |---------|--------|
-| Variable | `x` |
+| Variable | `x` (for y=f(x) curves) or `t` (for parametric curves) |
 | Constants | `pi`, `e` |
 | Arithmetic | `+`, `-`, `*`, `/` |
 | Power | `x^3`, `2^x` (right-associative) |
 | Functions | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `cosh`, `tanh`, `exp`, `log`/`ln`, `log10`, `sqrt`, `abs`, `sign`, `floor`, `ceil`, `round` |
 | Grouping | Parentheses `(` `)` |
 
-Example expressions:
+## Uutta 2026-04
+- Polaarikäyrät: Käyttäjä voi lisätä käyriä muodossa r = f(φ), esim. spiraalit ja ruusukäyrät.
+- Implisiittikäyrät: Käyttäjä voi lisätä käyriä muodossa f(x, y) = 0, esim. Astroidi, ympyrä, ellipsi.
 
-```
-x^2 - x + 1
-x * sin(x) + cos(x) - exp(1/x)
-exp(-x^2)
-sqrt(abs(x)) * sign(x)
-(x^2 - 1) / (x - 1)
-```
+## Uutta 2026-05 — Asteikkotilat ja pikselipohjainen piirto
 
-Points where the expression is undefined (domain errors, division by zero) are
-silently skipped, leaving a gap in the curve.
+### Kolme asteikkotilaa (*Draw Options › Scale Mode*)
+
+| Tila | Kuvaus |
+|------|--------|
+| **Equal Scale** | X- ja Y-akseleilla on fyysisesti sama yksikkökoko pikseleinä. Ympyrä `x² + y² = 1` näkyy täydellisenä ympyränä — ei ellipsinä. |
+| **Free Scale** | Käyttäjä asettaa erikseen X- ja Y-asteikon senttimetreissä per matemaattinen yksikkö. |
+| **Semi-Log** | Y-akseli on logaritminen, X-akseli lineaarinen (puolilogaritminen asteikko). |
+
+### Tekninen toteutus
+- Näyttöpiirto käyttää nyt **pikselikoordinaatteja** (Windows `MM_TEXT`) suoraan
+  `GetClientRect`:stä — ei enää `MM_LOMETRIC`-muunnosta, joka antoi epäluotettavan
+  kuvasuhteen non-square-DPI-näytöillä.
+- Tulostus käyttää edelleen `MM_LOMETRIC`-tilaa.
+- Equal Scale -tilassa `aspect = w/h` laajennetaan pienempi akseli niin, että
+  1 matemaattinen yksikkö vie täsmälleen saman pikselimäärän molemmissa suunnissa.
+- Tikutusaskel (`niceStep`) pakotetaan samaksi X- ja Y-akseleille kun skaalat ovat
+  yhtä suuret, jotta tikut näyttävät fyysisesti yhtä tiheiltä.
+- Hiirella panorointi käyttää oikeaa pikseliä/yksikkö-suhdetta kaikissa tiloissa.
 
 ## Help
 
@@ -93,10 +145,9 @@ hhc GraphDrawer.hhp
 
 ## Known Limitations
 
-- Custom expression is evaluated on x ∈ [−20, +20] with step 0.0005.  Zooming or
-  panning does not yet trigger re-evaluation over the new visible range.
-- The built-in functions are always plotted over the full visible scroll region;
-  zooming shows more or fewer periods depending on the scroll size.
+- The custom `y = f(x)` background-thread expression is re-evaluated when the
+  expression text or x-range changes; zooming does not trigger re-evaluation —
+  use the **x-range** fields in Draw Options to control the sampling domain.
 - No undo/redo for Draw Options changes (document dirty-flag is set but only the
   function-selection settings are persisted to file).
 

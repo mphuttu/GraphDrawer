@@ -19,13 +19,26 @@ functions on a 2-D Cartesian coordinate system.  It was written in C++ using the
 Microsoft Foundation Classes (MFC) and targets both 32-bit (Win32) and 64-bit (x64)
 Windows platforms.</p>
 
+<p><b>Uutta 2026-04:</b> Ohjelma tukee nyt myös polaarikäyriä (r = f(φ)) ja implisiittikäyriä (f(x, y) = 0). Voit lisätä esimerkiksi Astroidin: pow(abs(x),2/3)+pow(abs(y),2/3)-1 = 0.</p>
+
+<p><b>Uutta 2026-05:</b> Kolme asteikkotilaa — <em>Equal Scale</em> (1:1 pikselisuhde, ympyrät näyttävät ympyröiltä), <em>Free Scale</em> (käyttäjän määrittämä cm/yksikkö) ja <em>Semi-Log</em> (logaritminen Y-akseli). Kaikki piirto käyttää nyt pikselikoordinaatteja, joten kuvasuhde on luotettava kaikilla näytöillä.</p>
+
 <h2>Features</h2>
 <ul>
   <li>Draw up to 14 built-in functions simultaneously (sine, cosine, tangent, etc.).</li>
   <li>Enter an arbitrary expression <em>y&nbsp;=&nbsp;f(x)</em> using the custom expression field.</li>
+  <li>Plot <strong>parametric curves</strong> — enter x(t) and y(t) expressions with a t-range
+      (e.g. a cycloid, a circle, a Lissajous figure).</li>
+  <li>Add and manage <strong>multiple user-defined curves</strong> — each with its own label,
+      colour, and visibility checkbox.</li>
+  <li><strong>Zoom and pan</strong> the coordinate view with the mouse wheel and left-button drag.</li>
+  <li>Set the <strong>visible axis range</strong> (x min/max and y min/max) in Draw Options.</li>
+  <li>Choose a <strong>scale mode</strong>: <em>Equal Scale</em> (true 1:1 aspect, circles look
+      circular), <em>Free Scale</em> (custom cm/unit for each axis), or
+      <em>Semi-Log</em> (logarithmic Y axis).</li>
   <li>Customise coordinate axes: colour, line thickness, tick marks and labels.</li>
   <li>Choose a background colour.</li>
-  <li>Print and print-preview support.</li>
+  <li>Print and print-preview — output matches the on-screen view exactly.</li>
   <li>Background thread computation for custom expressions — the UI stays responsive.</li>
 </ul>
 
@@ -35,7 +48,11 @@ Windows platforms.</p>
   <li>Tick one or more built-in function checkboxes — the graph updates instantly.</li>
   <li>To plot a custom expression, type it in the <strong>y&nbsp;=</strong> field
       (e.g. <code>x^2 - x + 1</code>) and tick <strong>Draw Custom Function</strong>.</li>
-  <li>Use <strong>Draw › Draw Options</strong> to change colours and axis style.</li>
+  <li>Click <strong>Add…</strong> in the <em>User-Defined Curves</em> section to add a
+      y&nbsp;=&nbsp;f(x) or parametric curve.</li>
+  <li>Use <strong>Draw › Draw Options</strong> to change colours, axis style, and
+      the visible coordinate range.</li>
+  <li>Scroll the mouse wheel to zoom; drag to pan; right-click to reset the view.</li>
 </ol>
 
 <div class="note">
@@ -47,9 +64,9 @@ Windows platforms.</p>
 <ul>
   <li><a href="interface.htm">User Interface</a></li>
   <li><a href="drawing_functions.htm">Built-in Functions</a></li>
-  <li><a href="custom_expression.htm">Custom Expression y = f(x)</a></li>
+  <li><a href="custom_expression.htm">Custom Expression y = f(x) and Parametric Curves</a></li>
   <li><a href="draw_options.htm">Draw Options</a></li>
-  <li><a href="keyboard.htm">Keyboard Shortcuts</a></li>
+  <li><a href="keyboard.htm">Keyboard Shortcuts &amp; Mouse Controls</a></li>
 </ul>
 </body>
 </html>

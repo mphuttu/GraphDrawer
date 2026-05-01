@@ -17,6 +17,8 @@
 #include <cmath>
 #include <vector>
 #include <utility>
+#include <functional>
+#include <limits>
 
 namespace
 {
@@ -62,6 +64,12 @@ CGraphDrawerDoc::CGraphDrawerDoc() : m_sizDoc(850,1100)
 	
 	// Background color
 	m_DrawOptionsData.clrBkgndColor = RGB(96, 96, 96);
+
+	// Coordinate range (default ±10 math units)
+	m_DrawOptionsData.dXMin = -10.0;
+	m_DrawOptionsData.dXMax =  10.0;
+	m_DrawOptionsData.dYMin = -10.0;
+	m_DrawOptionsData.dYMax =  10.0;
 
 	// Custom expression
 	m_bDrawCustomFunction  = FALSE;
@@ -188,7 +196,7 @@ void CGraphDrawerDoc::OnDrawDrawoptions()
 	// TODO: Add your command handler code here
 	CDrawOptionsDialog aDlg;
 
-	 aDlg.SetData(m_DrawOptionsData);
+	aDlg.SetData(m_DrawOptionsData);
 	
 	if ( aDlg.DoModal() == IDOK )
 	{
@@ -205,176 +213,209 @@ void CGraphDrawerDoc::OnDrawDrawoptions()
 		// Background color
 		m_clrBkgndColor = aDlg.m_clrBkgndColor;
 		
-	aDlg.GetData(&m_DrawOptionsData);
+		aDlg.GetData(&m_DrawOptionsData);
+
+		// Recompute user-curve points if the range changed.
+		RecomputeUserCurves();
 	}
 	SetModifiedFlag(TRUE);
-	UpdateAllViews(NULL);
+	UpdateAllViews(NULL, 1);  // hint=1 signals a range change (view resets zoom/pan)
 }
 
 void DrawCoordinateAxes(CDC* pDC, BOOL bShowTicks, int nTicksInterval,
-						BOOL bShowLabels, CRect m_rcPrintRect)
+						BOOL bShowLabels, const CoordTransform& ct)
 {
-	// Set mapping mode
-	// pDC->SetMapMode(MM_LOMETRIC);
-	
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
+	// Origin = math (0,0)
+	CPoint ORIGIN = ct.ToLogical(0.0, 0.0);
 
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	double scaleX = ct.ScaleX();  // logical units per math unit
+	double scaleY = ct.ScaleY();
+
+	// Puolilogaritmisessa tilassa (bLogY=true, bLogX=false):
+	// Y=0 ei ole näkyvissä, joten X-akseli piirretään yMin-reunaan,
+	// Y-akseli piirretään normaalisti x=0:ssa (tai xMin-reunassa jos 0 ei näy).
+	double xAxisY  = (ct.bLogY)  ? ct.yMin : 0.0;  // X-akselin Y-arvo
+	double yAxisX  = (ct.bLogX)  ? ct.xMin : 0.0;  // Y-akselin X-arvo
+
+	// Clipped ends of axes
+	CPoint axisXLeft  = ct.ToLogical(ct.xMin, xAxisY);
+	CPoint axisXRight = ct.ToLogical(ct.xMax, xAxisY);
+	CPoint axisYBot   = ct.ToLogical(yAxisX, ct.yMin);
+	CPoint axisYTop   = ct.ToLogical(yAxisX, ct.yMax);
+
+	// X Axis
+	pDC->MoveTo(axisXLeft);
+	pDC->LineTo(axisXRight);
+	pDC->TextOutW(axisXRight.x + 4, axisXRight.y + 10, _T("X"));
+
+	// Y Axis
+	pDC->MoveTo(axisYBot);
+	pDC->LineTo(axisYTop);
+	pDC->TextOutW(axisYTop.x + 4, axisYTop.y - 10, _T("Y"));
+
+	if (!bShowTicks || nTicksInterval <= 0)
+		return;
+
+	const int tickHalf = 5;  // logical units
+
+	// -----------------------------------------------------------------------
+	// Logaritminen asteikko: tikut desikaadeittain (10^n) ja välit (2..9)
+	// -----------------------------------------------------------------------
+	if (ct.bLogX || ct.bLogY)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
+		// X-akseli log-tikut (jos X on log)
+		if (ct.bLogX && ct.xMin > 0 && ct.xMax > ct.xMin)
 		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;
-	
-	// SetViewportOrgEx (hDC, nHalfWidth, nHalfHeight, NULL);
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	int nEndTickY =  -(int) (nHalfHeight*0.99);
-	int nEndIickX = (int) ( nHalfWidth*0.99);
-	
-	/*
-	CString strHeights;
-	strHeights.Format(_T("nHalfWidth is %d and nHalfHeight is %d"), nHalfWidth, nEndTickY);
-	AfxMessageBox(strHeights);
-	*/
-
-	// For Metric mapping
-	// X-Axis
-	pDC->MoveTo(ORIGIN.x - nEndIickX, ORIGIN.y);
-	pDC->LineTo(ORIGIN.x + nEndIickX, ORIGIN.y);
-	// X label
-	pDC->TextOutW(ORIGIN.x + (int) (nHalfWidth*0.985), ORIGIN.y +10, _T("X") );
-
-	// Y-Axis
-	pDC->MoveTo(ORIGIN.x, ORIGIN.y + nEndTickY);
-	pDC->LineTo(ORIGIN.x, ORIGIN.y - nEndTickY);
-	// Y label
-	pDC->TextOutW(ORIGIN.x +10, ORIGIN.y - (int)( nHalfHeight*0.975), _T("Y"));
-
-	// Ticks
-	const int nTickHeightX = 5;
-	const int nTickHeightY = 5;
-	int nTicksIntervalY = (int)( (double) nHalfHeight* ( (double) nTicksInterval/nHalfWidth) );
-	int i=0;
-	int j=0;
-	const int denominator = nTicksInterval;
-	
-	
-
-	if ( bShowTicks == TRUE )
-	{
-
-		if ( nTicksInterval > 0 && nTicksInterval < nHalfWidth)
-		{
-			
-			
-			// X Axis
-			
-			for ( i = nTicksInterval; i < nHalfWidth -25; i += nTicksInterval) // nHalfWidth -25
+			int expMin = (int)std::floor(std::log10(ct.xMin));
+			int expMax = (int)std::ceil(std::log10(ct.xMax));
+			for (int e = expMin; e <= expMax; ++e)
 			{
-				// X ticks, positive X-Axis
-				pDC->MoveTo(ORIGIN.x + i, ORIGIN.y - nTickHeightX);
-				pDC->LineTo(ORIGIN.x + i, ORIGIN.y + nTickHeightX);
-				
-				// Show labels
-				CString strTemp;
-				CString strTempNeg;
-				strTemp.Format(_T("%d"), i/denominator);
-				strTempNeg.Format(_T("-%d"), i/denominator);
-				if ( bShowLabels == TRUE )
-					pDC->TextOutW(ORIGIN.x +i, ORIGIN.y -nTickHeightX -10, strTemp);
-
-				// X ticks, negative X-Axis
-				pDC->MoveTo(ORIGIN.x -i, ORIGIN.y - nTickHeightX);
-				pDC->LineTo(ORIGIN.x -i, ORIGIN.y + nTickHeightX);
-				if ( bShowLabels == TRUE )
-					pDC->TextOutW(ORIGIN.x -i, ORIGIN.y -nTickHeightX -10, strTempNeg);
-
-				if ( i < nEndTickY)
+				double base = std::pow(10.0, e);
+				if (base >= ct.xMin && base <= ct.xMax)
 				{
-					// Y ticks, negative Y-Axis
-					pDC->MoveTo(ORIGIN.x - nTickHeightY, ORIGIN.y - i);
-					pDC->LineTo(ORIGIN.x + nTickHeightY, ORIGIN.y - i);
-					// Show labels
-					CString strTmp;
-					CString strTmpNeg;
-					strTmp.Format(_T("%d"), i/denominator);
-					strTmpNeg.Format(_T("-%d"), i/denominator);
-					if ( bShowLabels == TRUE )
-						pDC->TextOutW(ORIGIN.x + nTickHeightY + 7, ORIGIN.y - i, strTmpNeg);
-
-					// Y ticks, positive Y-Axis
-					pDC->MoveTo(ORIGIN.x - nTickHeightY, ORIGIN.y + i);
-					pDC->LineTo(ORIGIN.x + nTickHeightY, ORIGIN.y + i);
-					if ( bShowLabels == TRUE )
-						pDC->TextOutW(ORIGIN.x + nTickHeightY + 7, ORIGIN.y + i, strTmp);
+					CPoint tp = ct.ToLogical(base, xAxisY);
+					pDC->MoveTo(tp.x, tp.y - tickHalf * 2);
+					pDC->LineTo(tp.x, tp.y + tickHalf * 2);
+					if (bShowLabels)
+					{
+						CString s;
+						s.Format(_T("1e%d"), e);
+						pDC->TextOutW(tp.x - 8, tp.y + tickHalf * 2 + 2, s);
+					}
+				}
+				for (int m = 2; m <= 9; ++m)
+				{
+					double tx = m * base;
+					if (tx < ct.xMin || tx > ct.xMax) continue;
+					CPoint tp = ct.ToLogical(tx, xAxisY);
+					pDC->MoveTo(tp.x, tp.y - tickHalf);
+					pDC->LineTo(tp.x, tp.y + tickHalf);
 				}
 			}
-			
-
-			// Y Axis
-			/*
-			for ( j = nTicksInterval; j <  nEndTickY; j += nTicksInterval )
+		}
+		// Puolilog: X lineaarinen tikut X-akselille (xAxisY-kohtaan)
+		if (!ct.bLogX)
+		{
+			double xRange2 = ct.xMax - ct.xMin;
+			auto niceStep2 = [](double range) -> double {
+				if (range <= 0.0) return 1.0;
+				double rawStep = range / 8.0;
+				double magnitude = std::pow(10.0, std::floor(std::log10(rawStep)));
+				double norm = rawStep / magnitude;
+				return ((norm < 1.5) ? 1.0 : (norm < 3.5) ? 2.0 : (norm < 7.5) ? 5.0 : 10.0) * magnitude;
+			};
+			double stepX2 = niceStep2(xRange2);
+			double firstX2 = std::ceil(ct.xMin / stepX2) * stepX2;
+			for (double tx = firstX2; tx <= ct.xMax + 1e-9; tx += stepX2)
 			{
-				// Y ticks, positive Y-Axis
-				pDC->MoveTo(ORIGIN.x - nTickHeightY, ORIGIN.y - j);
-				pDC->LineTo(ORIGIN.x + nTickHeightY, ORIGIN.y - j);
-				// Show labels
-				CString strTemp;
-				strTemp.Format(_T("%d"), j);
-				if ( bShowLabels == TRUE )
-					pDC->TextOutW(ORIGIN.x + nTickHeightY + 50, ORIGIN.y - j, strTemp);
-
-				// Y ticks, negative Y-Axis
-				pDC->MoveTo(ORIGIN.x - nTickHeightY, ORIGIN.y + j);
-				pDC->LineTo(ORIGIN.x + nTickHeightY, ORIGIN.y + j);
-				if ( bShowLabels == TRUE )
-					pDC->TextOutW(ORIGIN.x + nTickHeightY + 50, ORIGIN.y + j, strTemp);
+				CPoint tp = ct.ToLogical(tx, xAxisY);
+				pDC->MoveTo(tp.x, tp.y - tickHalf);
+				pDC->LineTo(tp.x, tp.y + tickHalf);
+				if (bShowLabels)
+				{
+					CString s;
+					if (std::abs(tx - std::round(tx)) < 1e-9)
+						s.Format(_T("%g"), std::round(tx));
+					else
+						s.Format(_T("%g"), tx);
+					pDC->TextOutW(tp.x - 8, tp.y + tickHalf + 2, s);
+				}
 			}
-			*/
-			
+		}
+		// Y-akseli log-tikut
+		if (ct.bLogY && ct.yMin > 0 && ct.yMax > ct.yMin)
+		{
+			int expMin = (int)std::floor(std::log10(ct.yMin));
+			int expMax = (int)std::ceil(std::log10(ct.yMax));
+			for (int e = expMin; e <= expMax; ++e)
+			{
+				double base = std::pow(10.0, e);
+				if (base >= ct.yMin && base <= ct.yMax)
+				{
+					CPoint tp = ct.ToLogical(yAxisX, base);
+					pDC->MoveTo(tp.x - tickHalf * 2, tp.y);
+					pDC->LineTo(tp.x + tickHalf * 2, tp.y);
+					if (bShowLabels)
+					{
+						CString s;
+						s.Format(_T("1e%d"), e);
+						pDC->TextOutW(tp.x + tickHalf * 2 + 3, tp.y, s);
+					}
+				}
+				for (int m = 2; m <= 9; ++m)
+				{
+					double ty = m * base;
+					if (ty < ct.yMin || ty > ct.yMax) continue;
+					CPoint tp = ct.ToLogical(yAxisX, ty);
+					pDC->MoveTo(tp.x - tickHalf, tp.y);
+					pDC->LineTo(tp.x + tickHalf, tp.y);
+				}
+			}
+		}
+		return;
+	}
 
+	// -----------------------------------------------------------------------
+	// Lineaarinen asteikko (alkuperäinen logiikka)
+	// -----------------------------------------------------------------------
+	double xRange = ct.xMax - ct.xMin;
+	double yRange = ct.yMax - ct.yMin;
+
+	// Choose a tick step that gives ~5-10 ticks across the range.
+	auto niceStep = [](double range) -> double {
+		if (range <= 0.0) return 1.0;
+		double rawStep = range / 8.0;
+		double magnitude = std::pow(10.0, std::floor(std::log10(rawStep)));
+		double norm = rawStep / magnitude;
+		double step = (norm < 1.5) ? 1.0 : (norm < 3.5) ? 2.0 : (norm < 7.5) ? 5.0 : 10.0;
+		return step * magnitude;
+	};
+	double tickStepX = niceStep(xRange);
+	double tickStepY = niceStep(yRange);
+
+	// Tasainen skaalaus (SCALE_EQUAL): ScaleX() == ScaleY() → 1 math-yksikkö =
+	// sama pikseliä molemmilla akseleilla. Käytetään sama tikutusaskel molemmille
+	// jotta tikut ovat fyysisesti yhtä tiheässä x- ja y-suunnassa.
+	{
+		double sx = ct.ScaleX(), sy = ct.ScaleY();
+		double avg = (sx + sy) * 0.5;
+		if (avg > 0.0 && std::abs(sx - sy) / avg < 0.01)
+			tickStepX = tickStepY = (tickStepX < tickStepY ? tickStepX : tickStepY);
+	}
+
+	// X ticks
+	double firstX = std::ceil(ct.xMin / tickStepX) * tickStepX;
+	for (double tx = firstX; tx <= ct.xMax + 1e-9; tx += tickStepX)
+	{
+		CPoint tp = ct.ToLogical(tx, xAxisY);
+		pDC->MoveTo(tp.x, tp.y - tickHalf);
+		pDC->LineTo(tp.x, tp.y + tickHalf);
+		if (bShowLabels)
+		{
+			CString s;
+			if (std::abs(tx - std::round(tx)) < 1e-9)
+				s.Format(_T("%g"), std::round(tx));
+			else
+				s.Format(_T("%g"), tx);
+			pDC->TextOutW(tp.x - 8, tp.y + tickHalf + 2, s);
+		}
+	}
+
+	// Y ticks
+	double firstY = std::ceil(ct.yMin / tickStepY) * tickStepY;
+	for (double ty = firstY; ty <= ct.yMax + 1e-9; ty += tickStepY)
+	{
+		CPoint tp = ct.ToLogical(yAxisX, ty);
+		pDC->MoveTo(tp.x - tickHalf, tp.y);
+		pDC->LineTo(tp.x + tickHalf, tp.y);
+		if (bShowLabels)
+		{
+			CString s;
+			if (std::abs(ty - std::round(ty)) < 1e-9)
+				s.Format(_T("%g"), std::round(ty));
+			else
+				s.Format(_T("%g"), ty);
+			pDC->TextOutW(tp.x + tickHalf + 3, tp.y, s);
 		}
 	}
 }
@@ -382,7 +423,6 @@ void DrawCoordinateAxes(CDC* pDC, BOOL bShowTicks, int nTicksInterval,
 
 CSize& CGraphDrawerDoc::GetDocSize(void)
 {
-	//TODO: insert return statement here
 	return m_sizDoc;
 }
 
@@ -409,16 +449,36 @@ UINT CGraphDrawerDoc::DrawThreadProc(LPVOID pParam)
 		}
 
 		std::vector<MathPoint> pts;
-		pts.reserve(static_cast<size_t>((p->xEnd - p->xStart) / p->xStep) + 1);
 
-		for (double x = p->xStart; x <= p->xEnd; x += p->xStep)
+		if (p->bLogX && p->xStart > 0.0 && p->xEnd > p->xStart)
 		{
-			if (pDoc->m_bCancelDraw)
-				break;
+			// Log-avaruuden näytteenotto: tasavälinen log10-avaruudessa
+			const int N = 80000;
+			double logStart = std::log10(p->xStart);
+			double logEnd   = std::log10(p->xEnd);
+			double step     = (logEnd - logStart) / N;
+			pts.reserve(N + 1);
+			for (int i = 0; i <= N; ++i)
+			{
+				if (pDoc->m_bCancelDraw) break;
+				double x = std::pow(10.0, logStart + i * step);
+				double y = 0.0;
+				if (parser.Evaluate(x, y))
+					pts.push_back({ x, y });
+			}
+		}
+		else
+		{
+			pts.reserve(static_cast<size_t>((p->xEnd - p->xStart) / p->xStep) + 1);
+			for (double x = p->xStart; x <= p->xEnd; x += p->xStep)
+			{
+				if (pDoc->m_bCancelDraw)
+					break;
 
-			double y = 0.0;
-			if (parser.Evaluate(x, y))
-				pts.push_back({ x, y });
+				double y = 0.0;
+				if (parser.Evaluate(x, y))
+					pts.push_back({ x, y });
+			}
 		}
 
 		if (!pDoc->m_bCancelDraw)
@@ -501,6 +561,7 @@ void CGraphDrawerDoc::SetCustomExpression(const CString& expr, BOOL bDraw,
 	params->strExpr       = expr;
 	params->xStart        = xStart;
 	params->xEnd          = xEnd;
+	params->bLogX         = false; // Puolilog: X aina lineaarinen
 	// Adapt step to always sample ~80 000 points regardless of range width.
 	{
 		double range = xEnd - xStart;
@@ -522,58 +583,25 @@ void CGraphDrawerDoc::SetCustomExpression(const CString& expr, BOOL bDraw,
 	}
 }
 
-// Draw the pre-computed custom-function points onto the DC.
-// Called from CGraphDrawerView::OnDraw() with the same coordinate system
-// used by all the other Draw* functions.
-void DrawCustomFunction(CDC* pDC, int nTicksInterval, CRect /*m_rcPrintRect*/,
-	COLORREF clrColor,
-	CGraphDrawerDoc* pDoc)
+// ---------------------------------------------------------------------------
+// Helper: draw a polyline from pre-computed MathPoints using CoordTransform.
+// ---------------------------------------------------------------------------
+static void DrawPolylinePts(CDC* pDC, const CoordTransform& ct,
+                             const std::vector<CGraphDrawerDoc::MathPoint>& pts,
+                             int absHalfH)
 {
-	if (!pDoc->m_bDrawCustomFunction)
-		return;
-
-	CRect rcClient;
-	HDC hDC = *pDC;
-	HWND hWnd = WindowFromDC(hDC);
-	GetClientRect(hWnd, &rcClient);
-	pDC->DPtoLP(&rcClient);
-
-	const int nHalfWidth  = rcClient.Width()  / 2;
-	const int nHalfHeight = rcClient.Height() / 2;
-	const CPoint ORIGIN(nHalfWidth, nHalfHeight);
-	const int denom = nTicksInterval;
-
-	CSingleLock lock(&pDoc->m_csCustomPoints, TRUE);
-	const auto& pts = pDoc->m_vecCustomPoints;
-	if (pts.empty())
-		return;
-
-	// Draw as a polyline: collect connected segments, breaking on gaps.
-	bool firstPoint = true;
+	bool first = true;
 	CPoint prev;
-
 	for (const auto& mp : pts)
 	{
-		int px = static_cast<int>(ORIGIN.x + mp.x * denom);
-		int py = static_cast<int>(ORIGIN.y + mp.y * denom);
-
-		// Skip points outside a generous clipping region.
-		if (px < -32000 || px > 32000 || py < -32000 || py > 32000)
+		CPoint cur = ct.ToLogical(mp.x, mp.y);
+		if (cur.x < -32000 || cur.x > 32000 || cur.y < -32000 || cur.y > 32000)
 		{
-			firstPoint = true;
-			continue;
+			first = true; continue;
 		}
-
-		CPoint cur(px, py);
-		if (firstPoint)
-		{
-			pDC->MoveTo(cur);
-			firstPoint = false;
-		}
-		else
-		{
-			// If the y-jump is huge (discontinuity, e.g. tan asymptote), lift pen.
-			if (abs(cur.y - prev.y) > abs(nHalfHeight) * 2)
+		if (first) { pDC->MoveTo(cur); first = false; }
+		else {
+			if (abs(cur.y - prev.y) > absHalfH * 2)
 				pDC->MoveTo(cur);
 			else
 				pDC->LineTo(cur);
@@ -582,1223 +610,400 @@ void DrawCustomFunction(CDC* pDC, int nTicksInterval, CRect /*m_rcPrintRect*/,
 	}
 }
 
-void DrawSine( CDC * pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrSineColor)
+// Draw the pre-computed custom-function points onto the DC.
+void DrawCustomFunction(CDC* pDC, const CoordTransform& ct, COLORREF /*clrColor*/,
+	CGraphDrawerDoc* pDoc)
 {
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
+	if (!pDoc->m_bDrawCustomFunction)
+		return;
 
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
+	CSingleLock lock(&pDoc->m_csCustomPoints, TRUE);
+	const auto& pts = pDoc->m_vecCustomPoints;
+	if (pts.empty())
+		return;
 
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	DrawPolylinePts(pDC, ct,
+		reinterpret_cast<const std::vector<CGraphDrawerDoc::MathPoint>&>(pts),
+		ct.clientH / 2);
+}
+
+// Draw all user-defined curves.
+void DrawUserCurves(CDC* pDC, const CoordTransform& ct,
+                    std::vector<UserCurve>& vecCurves, CCriticalSection& cs)
+{
+	CSingleLock lock(&cs, TRUE);
+	for (const auto& curve : vecCurves)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
+		if (!curve.bVisible)
+			continue;
 
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
+		CPen pen;
+		if (!pen.CreatePen(PS_SOLID, 1, curve.color))
+			continue;
+		CPen* pOldPen = pDC->SelectObject(&pen);
 
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;
-	
-	
-	// SetViewportOrgEx (hDC, nHalfWidth, nHalfHeight, NULL);
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	
-	// const int NUM = 1000;
-	// CPoint SINEAPT [NUM];
-
-	// Does not work
-	/*
-	for ( i =0; i < NUM; i++) 
+		if (curve.type == UCT_IMPLICIT) {
+			// Piirrä jokainen segmentti
+			for (const auto& seg : curve.segments) {
+				CPoint p1 = ct.ToLogical(seg.first.x, seg.first.y);
+				CPoint p2 = ct.ToLogical(seg.second.x, seg.second.y);
+				// Suodatetaan pois kaukana olevat
+				if ((p1.x < -32000 || p1.x > 32000 || p1.y < -32000 || p1.y > 32000) ||
+					(p2.x < -32000 || p2.x > 32000 || p2.y < -32000 || p2.y > 32000))
+					continue;
+				pDC->MoveTo(p1);
+				pDC->LineTo(p2);
+			}
+		} else if (!curve.points.empty()) {
+			bool first = true;
+			CPoint prev;
+			for (const auto& mp : curve.points)
 			{
-				SINEAPT[i].x = ORIGIN.x + i*nHalfWidth / NUM;
-				SINEAPT[i].y = (int) (ORIGIN.y + nTicksInterval* sin(TWOPI * i / NUM));
-
-	}
-
-	Polyline( hDC, SINEAPT, NUM);
-	*/
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-	/*
-	const int kyscale = (int) 90 / deltai;
-	const int kxscale = (int) ( nTicksInterval / deltai);
-	
-	int margin = 50;
-	int width = 2 * nHalfWidth - margin;
-	int height = 2*nHalfHeight - margin;
-	*/
-
-	
-
-	for ( i = 0; i <= EndX; i += deltai )
-	{
-		double value = sin(  i * PI/180);
-		// value += 1.0;
-
-		// 0.1 mm 
-		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
-		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
-		int yposneg = ToInt(ORIGIN.y - value * denominator);
-		// Positive x-axis
-		pDC->SetPixel(xpos, ypos, clrSineColor);
-		// Negative x-axis
-		pDC->SetPixel(xposneg, yposneg, clrSineColor);
+				CPoint cur = ct.ToLogical(mp.x, mp.y);
+				if (cur.x < -32000 || cur.x > 32000 || cur.y < -32000 || cur.y > 32000)
+				{
+					first = true; continue;
+				}
+				if (first) { pDC->MoveTo(cur); first = false; }
+				else {
+					if (abs(cur.y - prev.y) > ct.clientH * 2)
+						pDC->MoveTo(cur);
+					else
+						pDC->LineTo(cur);
+				}
+				prev = cur;
+			}
+		}
+		pDC->SelectObject(pOldPen);
 	}
 }
 
-void DrawCosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrSineColor)
+// ---------------------------------------------------------------------------
+// Helper: sample a function over [xMin, xMax] using the expression parser.
+// ---------------------------------------------------------------------------
+static void SampleYFX(const CString& expr, double xStart, double xEnd,
+                      std::vector<UserCurve::MathPoint>& out, bool bLogX = false)
 {
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
+	CExpressionParser parser;
+	if (!parser.Parse(expr))
+		return;
 
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	const int N = 10000;
+	out.reserve(N + 1);
+	if (bLogX && xStart > 0.0 && xEnd > xStart)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
+		// Tasavälinen näytteenotto log-avaruudessa
+		double logStart = std::log10(xStart);
+		double logEnd   = std::log10(xEnd);
+		double step = (logEnd - logStart) / N;
+		for (int i = 0; i <= N; ++i)
 		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
+			double x = std::pow(10.0, logStart + i * step);
+			double y = 0.0;
+			if (parser.Evaluate(x, y))
+				out.push_back({ x, y });
 		}
 	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = 0; i <= EndX; i += deltai )
+	else
 	{
-		double value = cos(  i * PI/180);
-		// value += 1.0;
-
-		// 0.1 mm 
-		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
-		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
-		int yposneg = ToInt(ORIGIN.y + value * denominator);
-		// Positive x-axis
-		pDC->SetPixel(xpos, ypos, clrSineColor);
-		// Negative x-axis
-		pDC->SetPixel(xposneg, yposneg, clrSineColor);
+		double step = (xEnd - xStart) / N;
+		for (int i = 0; i <= N; ++i)
+		{
+			double x = xStart + i * step;
+			double y = 0.0;
+			if (parser.Evaluate(x, y))
+				out.push_back({ x, y });
+		}
 	}
-
 }
 
-void DrawTan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrTanColor)
+static void SampleParametric(const CString& exprX, const CString& exprY,
+                              double tStart, double tEnd,
+                              std::vector<UserCurve::MathPoint>& out)
 {
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
+	CExpressionParser parserX, parserY;
+	if (!parserX.Parse(exprX) || !parserY.Parse(exprY))
+		return;
 
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	const int N = 10000;
+	double step = (tEnd - tStart) / N;
+	out.reserve(N + 1);
+	for (int i = 0; i <= N; ++i)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = 0; i <= EndX; i += deltai )
-	{
-		double value = tan(  i * PI/180);
-		// value += 1.0;
-
-		// 0.1 mm 
-		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
-		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
-		int yposneg = ToInt(ORIGIN.y - value * denominator);
-		// Positive x-axis
-		pDC->SetPixel(xpos, ypos, clrTanColor);
-		// Negative x-axis
-		pDC->SetPixel(xposneg, yposneg, clrTanColor);
+		double t = tStart + i * step;
+		double x = 0.0, y = 0.0;
+		if (parserX.EvaluateT(t, x) && parserY.EvaluateT(t, y))
+			out.push_back({ x, y });
 	}
 }
 
-void DrawCotan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrCotanColor )
+static void SamplePolar(const CString& exprR, double kStart, double kEnd,
+                        std::vector<UserCurve::MathPoint>& out)
 {
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
+	CExpressionParser parser;
+	if (!parser.Parse(exprR))
+		return;
 
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	const int N = 10000;
+	double step = (kEnd - kStart) / N;
+	out.reserve(N + 1);
+	for (int i = 0; i <= N; ++i)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
+		double k = kStart + i * step;
+		double r = 0.0;
+		if (parser.Evaluate(k, r))
 		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
+			double x = r * std::cos(k);
+			double y = r * std::sin(k);
+			out.push_back({ x, y });
 		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = 0; i <= EndX; i += deltai )
-	{
-		double value = 1 / tan(  i * PI/180);
-		// value += 1.0;
-
-		// 0.1 mm 
-		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		int xpos = ToInt(ORIGIN.x +  i*PI/180 * denominator  );
-		int xposneg = ToInt(ORIGIN.x - i*PI/180 * denominator);
-		int yposneg = ToInt(ORIGIN.y - value * denominator);
-		// Positive x-axis
-		pDC->SetPixel(xpos, ypos, clrCotanColor);
-		// Negative x-axis
-		pDC->SetPixel(xposneg, yposneg, clrCotanColor);
 	}
 }
 
-void DrawExp( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrExpColor)
+// MathPoint-segmenttipari
+using Segment = std::pair<UserCurve::MathPoint, UserCurve::MathPoint>;
+
+static void SampleImplicit(const CString& exprF, double x0, double x1, double y0, double y1, std::vector<Segment>& out)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	CExpressionParser parser;
+	if (!parser.Parse(exprF))
+		return;
+	const int NX = 400, NY = 400;
+	double dx = (x1 - x0) / NX;
+	double dy = (y1 - y0) / NY;
+	std::vector<std::vector<double>> F(NX+1, std::vector<double>(NY+1));
+	for (int i = 0; i <= NX; ++i)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
+		double x = x0 + i * dx;
+		for (int j = 0; j <= NY; ++j)
 		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
+			double y = y0 + j * dy;
+			double f = 0.0;
+			parser.Evaluate(x, y, f);
+			F[i][j] = f;
 		}
 	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = 0; i <= EndX; i += deltai )
+	for (int i = 0; i < NX; ++i)
 	{
-		double value = exp(i * PI / 180);
-		double valueneg = exp(-i * PI / 180);
-		// value += 1.0;
-
-		// 0.1 mm 
-		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
-		int xposneg = ToInt(ORIGIN.x - i * PI/180 * denominator);
-		int yposneg = ToInt(ORIGIN.y + valueneg * denominator);
-		// Positive x-axis
-		pDC->SetPixel(xpos, ypos, clrExpColor);
-		// Negative x-axis
-		pDC->SetPixel(xposneg, yposneg, clrExpColor);
+		double x00 = x0 + i * dx;
+		double x10 = x0 + (i+1) * dx;
+		for (int j = 0; j < NY; ++j)
+		{
+			double y00 = y0 + j * dy;
+			double y01 = y0 + (j+1) * dy;
+			double F00 = F[i][j];
+			double F10 = F[i+1][j];
+			double F11 = F[i+1][j+1];
+			double F01 = F[i][j+1];
+			int code = (F00 < 0) | ((F10 < 0) << 1) | ((F11 < 0) << 2) | ((F01 < 0) << 3);
+			if (code == 0 || code == 15) continue;
+			// Interpoloi reunat
+			UserCurve::MathPoint pts[4];
+			int n = 0;
+			auto interp = [](double f1, double f2, double x1, double y1, double x2, double y2) {
+				double t = f1 / (f1 - f2);
+				return UserCurve::MathPoint{ x1 + t * (x2 - x1), y1 + t * (y2 - y1) };
+			};
+			if ((F00 < 0) != (F01 < 0)) pts[n++] = interp(F00, F01, x00, y00, x00, y01);
+			if ((F10 < 0) != (F11 < 0)) pts[n++] = interp(F10, F11, x10, y00, x10, y01);
+			if ((F00 < 0) != (F10 < 0)) pts[n++] = interp(F00, F10, x00, y00, x10, y00);
+			if ((F01 < 0) != (F11 < 0)) pts[n++] = interp(F01, F11, x00, y01, x10, y01);
+			if (n == 2) out.push_back({ pts[0], pts[1] });
+			else if (n == 4) { out.push_back({ pts[0], pts[1] }); out.push_back({ pts[2], pts[3] }); }
+		}
 	}
 }
 
-void DrawLN( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrLNColor)
+// ---------------------------------------------------------------------------
+// CGraphDrawerDoc user-curve management
+// ---------------------------------------------------------------------------
+void CGraphDrawerDoc::AddUserCurve(const UserCurve& curveDef)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	const bool bLogX = (m_DrawOptionsData.scaleMode == 2);
+	UserCurve c = curveDef;
+	c.points.clear();
+	c.segments.clear();
+	if (c.type == UCT_YFX)
+		SampleYFX(c.strExprY, c.xStart, c.xEnd, c.points, bLogX);
+	else if (c.type == UCT_PARAMETRIC)
+		SampleParametric(c.strExprX, c.strExprYPar, c.tStart, c.tEnd, c.points);
+	else if (c.type == UCT_POLAR)
+		SamplePolar(c.strExprPolar, c.phiStart, c.phiEnd, c.points);
+	else if (c.type == UCT_IMPLICIT)
+		SampleImplicit(c.strExprImplicit, c.xStartImp, c.xEndImp, c.yStartImp, c.yEndImp, c.segments);
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
+		CSingleLock lock(&m_csUserCurves, TRUE);
+		m_vecUserCurves.push_back(std::move(c));
 	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int EndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = 0; i <= EndX; i += deltai )
-	{
-		double value = log(i * PI / 180);
-		// double valueneg = exp(-i * PI / 180);
-		// value += 1.0;
-
-		// 0.1 mm 
-		// 100 * 0,1 mm = 10 mm = 1 cm 
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
-		// int xposneg = ORIGIN.x - i * PI/180 * denominator;
-		// int yposneg = ORIGIN.y + valueneg * denominator;
-		// Positive x-axis
-		pDC->SetPixel(xpos, ypos, clrLNColor);
-		// Negative x-axis
-		// pDC->SetPixel(xposneg, yposneg, clrLNColor);
-	}
+	UpdateAllViews(NULL);
 }
 
-void DrawArcsine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrArcsineColor)
+void CGraphDrawerDoc::RemoveUserCurve(int idx)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
-	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
-	double value = 0.0;
-	double valueneg = 0.0;
-	double valuet = 0.0;
-	double valuenegt = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = ToInt(-nHalfHeight - PI*denominator );
-	CString strTemp;
-	
-	
-	
-	int nCount = ToInt(nEndY / (PI*denominator)) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
-	
-	for ( n = 0; n <= nCount; n++ )
-	{
-		for ( i = -denominator; i <= denominator; i += deltai )
-		{
-				value = asin(i * PI/180) + n * 2 * PI;
-				valueneg = -value;
-				valuet = PI - asin(i * PI / 180 ) + n* 2 * PI;
-				valuenegt = -valuet;
-			
-			// 0.1 mm 
-			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ToInt(ORIGIN.y + value * denominator);
-			int ytpos = ToInt(ORIGIN.y + valuet * denominator);
-			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
-			int xposneg = ToInt(ORIGIN.x - i * PI/180 * denominator);
-			int yposneg = ToInt(ORIGIN.y + valueneg * denominator);
-			int ytposneg = ToInt(ORIGIN.y + valuenegt * denominator);
-			//  Positive x-axis
-			if ( xpos > 0 )
-			pDC->SetPixel(xpos, ypos, clrArcsineColor);
-			// Negative x-axis
-			// if ( xposneg < 0 )
-			 pDC->SetPixel(xposneg, yposneg, clrArcsineColor);
-			// Positive x-axis
-			if ( xpos > 0)
-			 pDC->SetPixel(xpos, ytpos, clrArcsineColor);
-			// Negative x-axis
-			//  if ( xposneg < 0)
-			 pDC->SetPixel(xposneg, ytposneg, clrArcsineColor);
-
-		}
-		
-	}
-
+	CSingleLock lock(&m_csUserCurves, TRUE);
+	if (idx >= 0 && idx < (int)m_vecUserCurves.size())
+		m_vecUserCurves.erase(m_vecUserCurves.begin() + idx);
+	lock.Unlock();
+	UpdateAllViews(NULL);
 }
 
-void DrawArccosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrArccosineColor)
+void CGraphDrawerDoc::SetUserCurveVisible(int idx, BOOL bVisible)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
+		CSingleLock lock(&m_csUserCurves, TRUE);
+		if (idx >= 0 && idx < (int)m_vecUserCurves.size())
+			m_vecUserCurves[idx].bVisible = bVisible;
 	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
-	double value = 0.0;
-	double valueneg = 0.0;
-	double valuet = 0.0;
-	double valuenegt = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = ToInt(-nHalfHeight -0.7 * denominator);
-	CString strTemp;
-	
-	
-	
-	int nCount = ToInt(nEndY / (PI * denominator)) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
-	
-	for ( n = 0; n <= nCount; n++ )
-	{
-		for ( i = -denominator; i <= denominator; i += deltai )
-		{
-				value = acos(i * PI/180) + n * 2 * PI;
-				valueneg = -value;
-				valuet = - acos(i * PI / 180 ) + n* 2 * PI;
-				valuenegt = -valuet;
-			
-			// 0.1 mm 
-			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ToInt(ORIGIN.y + value * denominator);
-			int ytpos = ToInt(ORIGIN.y + valuet * denominator);
-			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
-			int xposneg = ToInt(ORIGIN.x - i * PI/180 * denominator);
-			int yposneg = ToInt(ORIGIN.y + valueneg * denominator);
-			int ytposneg = ToInt(ORIGIN.y + valuenegt * denominator);
-			//  Positive x-axis
-			pDC->SetPixel(xpos, ypos, clrArccosineColor);
-			// Negative x-axis
-			 pDC->SetPixel(xpos, yposneg, clrArccosineColor);
-			// Positive x-axis
-			 pDC->SetPixel(xpos, ytpos, clrArccosineColor);
-			// Negative x-axis
-			 pDC->SetPixel(xpos, ytposneg, clrArccosineColor);
-
-		}
-		
-	}
+	UpdateAllViews(NULL);
 }
 
-void DrawArctan ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrArctanColor)
+void CGraphDrawerDoc::RecomputeUserCurves()
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
+	const bool bLogX = (m_DrawOptionsData.scaleMode == 2);
+	CSingleLock lock(&m_csUserCurves, TRUE);
+	for (auto& c : m_vecUserCurves)
 	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	int n = 0;
-	double value = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = ToInt(-nHalfHeight - 0.7 * denominator);
-	CString strTemp;	
-	
-	int nCount = ToInt(nEndY / (PI * denominator)) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
-	
-	for ( n = -nCount; n <= nCount; n++ )
-	{
-		for ( i = -nEndX; i <= nEndX; i += deltai )
-		{
-				value = atan(i * PI/180) + n *  PI;
-				
-			
-			// 0.1 mm 
-			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ToInt(ORIGIN.y + value * denominator);
-			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
-			pDC->SetPixel(xpos, ypos, clrArctanColor);
-			
-		}
-		
+		c.points.clear();
+		c.segments.clear();
+		if (c.type == UCT_YFX)
+			SampleYFX(c.strExprY, c.xStart, c.xEnd, c.points, bLogX);
+		else if (c.type == UCT_PARAMETRIC)
+			SampleParametric(c.strExprX, c.strExprYPar, c.tStart, c.tEnd, c.points);
+		else if (c.type == UCT_POLAR)
+			SamplePolar(c.strExprPolar, c.phiStart, c.phiEnd, c.points);
+		else if (c.type == UCT_IMPLICIT)
+			SampleImplicit(c.strExprImplicit, c.xStartImp, c.xEndImp, c.yStartImp, c.yEndImp, c.segments);
 	}
 }
 
-double cotan ( double x)
+// ---------------------------------------------------------------------------
+// Built-in function curves — all refactored to use CoordTransform
+// ---------------------------------------------------------------------------
+
+// Generic helper: draw f(x) using SetPixel over the visible x range.
+static void DrawFuncPixels(CDC* pDC, const CoordTransform& ct, COLORREF color,
+                            std::function<double(double)> fn)
 {
-	return 1/tan(x);
+	// Use a polyline approach (MoveTo/LineTo) instead of SetPixel — much faster
+	// and produces anti-aliased-looking connected curves instead of isolated dots.
+	CPen pen(PS_SOLID, 1, color);
+	CPen* pOldPen = pDC->SelectObject(&pen);
+
+	const double step = (ct.xMax - ct.xMin) / (ct.clientW > 0 ? ct.clientW : 1000);
+	bool first = true;
+	CPoint prev;
+	for (double x = ct.xMin; x <= ct.xMax + step * 0.5; x += step)
+	{
+		double y = fn(x);
+		if (!_finite(y) || _isnan(y)) { first = true; continue; }
+		CPoint p = ct.ToLogical(x, y);
+		if (p.x < -32000 || p.x > 32000 || p.y < -32000 || p.y > 32000)
+		{ first = true; continue; }
+		if (first) { pDC->MoveTo(p); first = false; }
+		else {
+			if (abs(p.y - prev.y) > ct.clientH * 2) pDC->MoveTo(p);
+			else pDC->LineTo(p);
+		}
+		prev = p;
+	}
+	pDC->SelectObject(pOldPen);
 }
 
-double arccotan (double y)
+void DrawSine(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 {
-	return atan(1/y);
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::sin(x); });
 }
 
-void DrawArccotan ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrArccotanColor)
+void DrawCosine(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
-	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
-	double value = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = ToInt(-nHalfHeight - 0.7 * denominator);
-	CString strTemp;	
-	
-	int nCount = ToInt(nEndY / (PI * denominator)) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
-	
-	for ( n = -nCount; n <= nCount; n++ )
-	{
-		for ( i = -nEndX; i <= nEndX; i += deltai )
-		{
-				value = arccotan(i * PI/180) + n *  PI;
-				
-			
-			// 0.1 mm 
-			// 100 * 0,1 mm = 10 mm = 1 cm 
-			int ypos = ToInt(ORIGIN.y + value * denominator);
-			int xpos = ToInt(ORIGIN.x +  i *PI/180 * denominator  );
-			pDC->SetPixel(xpos, ypos, clrArccotanColor);
-			
-		}
-		
-	}
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::cos(x); });
 }
 
-void DrawHyperbolicSine ( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrHyperbolicSine)
+void DrawTan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
-	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double value = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = -nEndX; i <= nEndX ; i += deltai)
-	{
-		value = sinh( i * PI / 180);
-
-		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		
-		pDC->SetPixel( xpos, ypos, clrHyperbolicSine);
-	}
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		double c = std::cos(x);
+		if (std::abs(c) < 1e-6) return std::numeric_limits<double>::quiet_NaN();
+		return std::tan(x);
+	});
 }
 
-void DrawHyperbolicCosine( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrHyperbolicCosine)
+void DrawCotan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
-	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double value = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = -nEndX; i <= nEndX ; i += deltai)
-	{
-		value = cosh( i * PI / 180);
-
-		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		
-		pDC->SetPixel( xpos, ypos, clrHyperbolicCosine);
-	}
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		double s = std::sin(x);
+		if (std::abs(s) < 1e-6) return std::numeric_limits<double>::quiet_NaN();
+		return std::cos(x) / s;
+	});
 }
 
-void DrawHyperbolicTan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrHyperbolicTan)
+void DrawExp(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
-	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double value = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	for ( i = -nEndX; i <= nEndX ; i += deltai)
-	{
-		value = tanh( i * PI / 180);
-
-		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		
-		pDC->SetPixel( xpos, ypos, clrHyperbolicTan);
-	}
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::exp(x); });
 }
 
-double coth ( double x){
-	return 1/tanh(x);
-}
-
-void DrawHyperbolicCotan( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect, COLORREF clrHyperbolicCotan)
+void DrawLN(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 {
-	// Constants
-	static const double PI = 3.1415926535897932384626433832795;
-	static const double TWOPI = 2*PI;
-	// Find the client rectangle
-	CRect rcClient;
-	HDC hDC=*pDC;
-	HWND hWndFromDC =WindowFromDC(hDC);
-	GetClientRect(hWndFromDC, &rcClient);
-
-	// Check the device context for printing mode
-	if ( pDC->IsPrinting() == TRUE )
-	{
-		// Find the Print width: Window width ratio
-		double dWidthRatio = (double) m_rcPrintRect.Width() 
-			/ (double) rcClient.Width();
-
-		// Find the Print height: Window height ratio
-		double dHeightRatio = (double) m_rcPrintRect.Height() 
-			/ (double) rcClient.Height();
-
-		// Calculate the device's aspect ratio
-		double dAspect = (double) pDC->GetDeviceCaps(ASPECTX) 
-			/ (double) pDC->GetDeviceCaps(ASPECTY);
-
-		// Find the new relative height
-		int nHeight = (int) (rcClient.Height() *dWidthRatio * dAspect ); // 
-
-		// Find the new relative width
-		int nWidth = (int) (rcClient.Width() * dHeightRatio * ( 1.0 / dAspect ) );
-
-		// Set the whole rectangle
-		rcClient = m_rcPrintRect;
-
-		// Determine the best fit, across or down the page
-		if ( nHeight > nWidth )
-		{
-			// Down is best, so adjust the width
-			rcClient.BottomRight().x = m_rcPrintRect.TopLeft().x + nWidth;
-		}
-		else 
-		{
-			// Across is best, so adjust the height
-			rcClient.BottomRight().y = m_rcPrintRect.TopLeft().y + nHeight;
-		}
-	}
-	// Convert to logical units
-	 pDC->DPtoLP(&rcClient);
-
-	int nHalfWidth = rcClient.Width() / 2;
-	int nHalfHeight = rcClient.Height() / 2;	
-
-	// CPoint ORIGIN(0, 0);
-	CPoint ORIGIN(nHalfWidth, nHalfHeight);
-
-	double i = 0.0;
-	double deltai = 0.01;
-	const int denominator = nTicksInterval;
-	double j = 0.0;
-	int n = 0;
-	double value = 0.0;
-	int nEndX = ToInt(180 * (rcClient.Width() / 2) / (PI * denominator) - 0.05 * denominator);
-
-	// int nEndY = -180 * (rcClient.Height() / 2 ) / (PI * denominator ) - 0.3 * denominator;
-	int nEndY = ToInt(-nHalfHeight - 0.7 * denominator);
-	CString strTemp;	
-	
-	int nCount = ToInt(nEndY / (PI * denominator)) ;
-	strTemp.Format(_T("nEndY is %d and nCount is %d"), nEndY, nCount);
-	// AfxMessageBox(strTemp);
-	
-	for ( i = -nEndX; i <= nEndX ; i += deltai)
-	{
-		value = coth( i * PI / 180);
-
-		int xpos = ToInt(ORIGIN.x + i*PI / 180 * denominator);
-		int ypos = ToInt(ORIGIN.y + value * denominator);
-		
-		pDC->SetPixel( xpos, ypos, clrHyperbolicCotan);
-	}
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		if (x <= 0.0) return std::numeric_limits<double>::quiet_NaN();
+		return std::log(x);
+	});
 }
+
+void DrawArcsine(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		if (x < -1.0 || x > 1.0) return std::numeric_limits<double>::quiet_NaN();
+		return std::asin(x);
+	});
+}
+
+void DrawArccosine(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		if (x < -1.0 || x > 1.0) return std::numeric_limits<double>::quiet_NaN();
+		return std::acos(x);
+	});
+}
+
+void DrawArctan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::atan(x); });
+}
+
+double cotan(double x)  { return 1.0 / std::tan(x); }
+double arccotan(double y) { return std::atan(1.0 / y); }
+
+void DrawArccotan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		if (std::abs(x) < 1e-10) return std::numeric_limits<double>::quiet_NaN();
+		return std::atan(1.0 / x);
+	});
+}
+
+void DrawHyperbolicSine(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::sinh(x); });
+}
+
+void DrawHyperbolicCosine(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::cosh(x); });
+}
+
+void DrawHyperbolicTan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){ return std::tanh(x); });
+}
+
+double coth(double x) { return 1.0 / std::tanh(x); }
+
+void DrawHyperbolicCotan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
+{
+	DrawFuncPixels(pDC, ct, clrColor, [](double x){
+		if (std::abs(x) < 1e-10) return std::numeric_limits<double>::quiet_NaN();
+		return 1.0 / std::tanh(x);
+	});
+}
+

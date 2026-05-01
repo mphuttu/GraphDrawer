@@ -23,6 +23,16 @@ struct DrawOptionsData
 
 	// Background color
 	COLORREF clrBkgndColor;
+
+	// Coordinate range (math units visible on screen)
+	double dXMin;
+	double dXMax;
+	double dYMin;
+	double dYMax;
+	// Scaling options
+	int scaleMode; // 0 = equal, 1 = free, 2 = log
+	double scaleX; // X unit (cm) for free scaling
+	double scaleY; // Y unit (cm) for free scaling
 };
 
 class CDrawOptionsDialog : public CDialog
@@ -37,6 +47,10 @@ public:
 	enum { IDD = IDD_DRAWOPTIONSDIALOG };
 
 protected:
+	// Scaling controls
+	int m_scaleMode; // 0 = equal, 1 = free, 2 = log
+	double m_scaleX;
+	double m_scaleY;
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	DECLARE_MESSAGE_MAP()
@@ -65,4 +79,10 @@ public:
 	CMFCColorButton m_wndBkgndColor;
 	COLORREF m_clrBkgndColor;
 	afx_msg void OnClickedBkgndmfccolorbutton();
+	// Coordinate range fields
+	double m_dXMin;
+	double m_dXMax;
+	double m_dYMin;
+	double m_dYMax;
+	afx_msg void OnScaleModeChanged();
 };

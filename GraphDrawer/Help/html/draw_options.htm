@@ -11,6 +11,7 @@
   table { border-collapse: collapse; width: 100%; margin-top: 10px; }
   th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
   th { background: #e8f0fb; }
+  .note { background: #eef4ff; border-left: 4px solid #1a5fa8; padding: 8px 14px; margin: 14px 0; }
 </style>
 </head>
 <body>
@@ -19,6 +20,7 @@
 <p>The Draw Options dialog is opened via <strong>Draw › Draw Options…</strong> or
 the toolbar button.  Changes take effect when you press <strong>OK</strong>.</p>
 
+<h2>Axis Style</h2>
 <table>
   <tr><th>Control</th><th>Description</th></tr>
   <tr>
@@ -31,11 +33,12 @@ the toolbar button.  Changes take effect when you press <strong>OK</strong>.</p>
   </tr>
   <tr>
     <td>Ticks Interval</td>
-    <td>Distance between consecutive tick marks, in logical units (100 = 1 cm at screen resolution).</td>
+    <td>Approximate number of tick subdivisions along each axis.  The actual
+        step is rounded to a "nice" number (1, 2, 5, 10, …).</td>
   </tr>
   <tr>
     <td>Show Ticks Label</td>
-    <td>Print numeric labels next to each tick mark.</td>
+    <td>Print numeric labels next to each tick mark showing the math value.</td>
   </tr>
   <tr>
     <td>Choose Colour for Coordinate Axes</td>
@@ -50,5 +53,62 @@ the toolbar button.  Changes take effect when you press <strong>OK</strong>.</p>
     <td>Click the colour button to change the drawing area background.</td>
   </tr>
 </table>
+
+<h2>Coordinate Range</h2>
+<p>These fields control the mathematical extent of the coordinate system shown
+in the view.  After pressing <strong>OK</strong> the zoom/pan state is reset to
+this range.</p>
+<table>
+  <tr><th>Control</th><th>Description</th></tr>
+  <tr><td>X min</td><td>Left edge of the visible x-axis (default −10).</td></tr>
+  <tr><td>X max</td><td>Right edge of the visible x-axis (default +10).</td></tr>
+  <tr><td>Y min</td><td>Bottom edge of the visible y-axis (default −10).</td></tr>
+  <tr><td>Y max</td><td>Top edge of the visible y-axis (default +10).</td></tr>
+</table>
+
+<h2>Scale Mode</h2>
+<p>The <strong>Scale Mode</strong> radio buttons control how mathematical units
+are mapped to screen pixels.</p>
+<table>
+  <tr><th>Mode</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Equal Scale</strong></td>
+    <td>One mathematical unit occupies exactly the same number of pixels on both
+        axes regardless of the monitor's DPI or aspect ratio.  A circle defined
+        as <code>x² + y² = 1</code> is drawn as a perfect circle, not an
+        ellipse.  The shorter axis range is expanded automatically to fill
+        the window.</td>
+  </tr>
+  <tr>
+    <td><strong>Free Scale</strong></td>
+    <td>Set independent scales for X and Y in centimetres per unit.  The
+        <em>Scale X</em> and <em>Scale Y</em> fields become active.</td>
+  </tr>
+  <tr>
+    <td><strong>Semi-Log</strong></td>
+    <td>The Y-axis is logarithmic and the X-axis is linear (semi-logarithmic
+        plot).  The Y range must be strictly positive; values ≤ 0 are clamped
+        to 10⁻³ automatically.</td>
+  </tr>
+</table>
+<table>
+  <tr><th>Control</th><th>Description</th></tr>
+  <tr>
+    <td>Scale X (cm/unit)</td>
+    <td>Centimetres per mathematical unit on the X-axis.  Active only in
+        <em>Free Scale</em> mode.</td>
+  </tr>
+  <tr>
+    <td>Scale Y (cm/unit)</td>
+    <td>Centimetres per mathematical unit on the Y-axis.  Active only in
+        <em>Free Scale</em> mode.</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>Tip:</strong>  You can also zoom and pan interactively with the mouse
+  without opening this dialog — see <a href="keyboard.htm">Mouse Controls</a>.
+  Right-click in the view to reset back to the range set here.
+</div>
 </body>
 </html>
