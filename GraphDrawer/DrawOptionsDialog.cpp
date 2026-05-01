@@ -26,7 +26,8 @@ CDrawOptionsDialog::CDrawOptionsDialog(CWnd* pParent /*=NULL*/)
 	, m_dYMax(10.0)
 	, m_scaleMode(0)
 	, m_scaleX(1.0)
-	, m_scaleY(1.0)	
+	, m_scaleY(1.0)
+	, m_logMode(1)	// oletus: Linear X, Log Y
 {
 }
 
@@ -52,6 +53,7 @@ void CDrawOptionsDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Radio(pDX, IDC_SCALE_EQUAL, m_scaleMode);
 	DDX_Text(pDX, IDC_SCALE_X_EDIT, m_scaleX);
 	DDX_Text(pDX, IDC_SCALE_Y_EDIT, m_scaleY);
+	DDX_Radio(pDX, IDC_LOG_X_ONLY, m_logMode);
 }
 
 
@@ -66,6 +68,9 @@ BEGIN_MESSAGE_MAP(CDrawOptionsDialog, CDialog)
 	ON_BN_CLICKED(IDC_SCALE_EQUAL, &CDrawOptionsDialog::OnScaleModeChanged)
 	ON_BN_CLICKED(IDC_SCALE_FREE,  &CDrawOptionsDialog::OnScaleModeChanged)
 	ON_BN_CLICKED(IDC_SCALE_LOG,   &CDrawOptionsDialog::OnScaleModeChanged)
+	ON_BN_CLICKED(IDC_LOG_X_ONLY,  &CDrawOptionsDialog::OnLogModeChanged)
+	ON_BN_CLICKED(IDC_LOG_Y_ONLY,  &CDrawOptionsDialog::OnLogModeChanged)
+	ON_BN_CLICKED(IDC_LOG_XY,      &CDrawOptionsDialog::OnLogModeChanged)
 END_MESSAGE_MAP()
 
 
@@ -165,6 +170,11 @@ BOOL CDrawOptionsDialog::OnInitDialog()
 	// Piilota yksikköeditboksit jos ei "free scaling"
 	GetDlgItem(IDC_SCALE_X_EDIT)->ShowWindow(m_scaleMode == 1 ? SW_SHOW : SW_HIDE);
 	GetDlgItem(IDC_SCALE_Y_EDIT)->ShowWindow(m_scaleMode == 1 ? SW_SHOW : SW_HIDE);
+	// Aktivoi log sub-mode radionapit vain logaritmitilassa
+	BOOL bLog = (m_scaleMode == 2);
+	GetDlgItem(IDC_LOG_X_ONLY)->EnableWindow(bLog);
+	GetDlgItem(IDC_LOG_Y_ONLY)->EnableWindow(bLog);
+	GetDlgItem(IDC_LOG_XY)->EnableWindow(bLog);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -241,6 +251,7 @@ void CDrawOptionsDialog::GetData(DrawOptionsData* dr)
 	dr->scaleMode = m_scaleMode;
 	dr->scaleX = m_scaleX;
 	dr->scaleY = m_scaleY;
+	dr->logMode = m_logMode;
 }
 
 void CDrawOptionsDialog::SetData(DrawOptionsData dr)
@@ -266,6 +277,7 @@ void CDrawOptionsDialog::SetData(DrawOptionsData dr)
 	m_scaleMode = dr.scaleMode;
 	m_scaleX = dr.scaleX;
 	m_scaleY = dr.scaleY;
+	m_logMode = dr.logMode;
 }
 
 
@@ -295,9 +307,17 @@ void CDrawOptionsDialog::OnClickedBkgndmfccolorbutton()
 
 void CDrawOptionsDialog::OnScaleModeChanged()
 {
-	// Lue valittu radio-button m_scaleMode:een
 	UpdateData(TRUE);
 	BOOL bFree = (m_scaleMode == 1);
 	GetDlgItem(IDC_SCALE_X_EDIT)->ShowWindow(bFree ? SW_SHOW : SW_HIDE);
 	GetDlgItem(IDC_SCALE_Y_EDIT)->ShowWindow(bFree ? SW_SHOW : SW_HIDE);
+	BOOL bLog = (m_scaleMode == 2);
+	GetDlgItem(IDC_LOG_X_ONLY)->EnableWindow(bLog);
+	GetDlgItem(IDC_LOG_Y_ONLY)->EnableWindow(bLog);
+	GetDlgItem(IDC_LOG_XY)->EnableWindow(bLog);
+}
+
+void CDrawOptionsDialog::OnLogModeChanged()
+{
+	UpdateData(TRUE); // päivittää m_logMode DDX_Radio:n kautta
 }

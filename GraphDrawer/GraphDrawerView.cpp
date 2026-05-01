@@ -127,9 +127,11 @@ CoordTransform CGraphDrawerView::BuildCoordTransform(CDC* pDC) const
 			xMin = cx - xRange * 0.5; xMax = cx + xRange * 0.5;
 			yMin = cy - yRange * 0.5; yMax = cy + yRange * 0.5;
 		} else if (opts.scaleMode == 2) {
-			if (yMin <= 0.0) yMin = 1e-3;
-			if (yMax <= yMin) yMax = yMin * 1000.0;
-			return CoordTransform(xMin, xMax, yMin, yMax, w, h, false, true, false);
+			bool bLogX = (opts.logMode == 0 || opts.logMode == 2);
+			bool bLogY = (opts.logMode == 1 || opts.logMode == 2);
+			if (bLogX) { if (xMin <= 0.0) xMin = 1e-3; if (xMax <= xMin) xMax = xMin * 1000.0; }
+			if (bLogY) { if (yMin <= 0.0) yMin = 1e-3; if (yMax <= yMin) yMax = yMin * 1000.0; }
+			return CoordTransform(xMin, xMax, yMin, yMax, w, h, bLogX, bLogY, false);
 		}
 		return CoordTransform(xMin, xMax, yMin, yMax, w, h, false, false, false);
 	}
@@ -187,10 +189,12 @@ CoordTransform CGraphDrawerView::BuildCoordTransform(CDC* pDC) const
 		xMin = cx - xRange * 0.5; xMax = cx + xRange * 0.5;
 		yMin = cy - yRange * 0.5; yMax = cy + yRange * 0.5;
 	} else if (opts.scaleMode == 2) {
-		// Puolilogaritminen: Y logaritminen, X lineaarinen
-		if (yMin <= 0.0) yMin = 1e-3;
-		if (yMax <= yMin) yMax = yMin * 1000.0;
-		return CoordTransform(xMin, xMax, yMin, yMax, w, h, false, true, true);
+		// Logaritminen asteikko: logMode määrää kumpi akseli on log
+		bool bLogX = (opts.logMode == 0 || opts.logMode == 2);
+		bool bLogY = (opts.logMode == 1 || opts.logMode == 2);
+		if (bLogX) { if (xMin <= 0.0) xMin = 1e-3; if (xMax <= xMin) xMax = xMin * 1000.0; }
+		if (bLogY) { if (yMin <= 0.0) yMin = 1e-3; if (yMax <= yMin) yMax = yMin * 1000.0; }
+		return CoordTransform(xMin, xMax, yMin, yMax, w, h, bLogX, bLogY, true);
 	}
 	return CoordTransform(xMin, xMax, yMin, yMax, w, h, false, false, true);
 }

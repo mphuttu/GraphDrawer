@@ -33,6 +33,7 @@ struct DrawOptionsData
 	int scaleMode; // 0 = equal, 1 = free, 2 = log
 	double scaleX; // X unit (cm) for free scaling
 	double scaleY; // Y unit (cm) for free scaling
+	int logMode;   // 0 = LogX+LinY, 1 = LinX+LogY, 2 = LogX+LogY (active when scaleMode==2)
 };
 
 class CDrawOptionsDialog : public CDialog
@@ -51,6 +52,7 @@ protected:
 	int m_scaleMode; // 0 = equal, 1 = free, 2 = log
 	double m_scaleX;
 	double m_scaleY;
+	int m_logMode;   // 0 = LogX+LinY, 1 = LinX+LogY, 2 = LogX+LogY
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	DECLARE_MESSAGE_MAP()
@@ -85,4 +87,5 @@ public:
 	double m_dYMin;
 	double m_dYMax;
 	afx_msg void OnScaleModeChanged();
+	afx_msg void OnLogModeChanged();
 };

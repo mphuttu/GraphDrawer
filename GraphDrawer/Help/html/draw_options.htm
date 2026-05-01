@@ -85,10 +85,35 @@ are mapped to screen pixels.</p>
         <em>Scale X</em> and <em>Scale Y</em> fields become active.</td>
   </tr>
   <tr>
-    <td><strong>Semi-Log</strong></td>
-    <td>The Y-axis is logarithmic and the X-axis is linear (semi-logarithmic
-        plot).  The Y range must be strictly positive; values ≤ 0 are clamped
-        to 10⁻³ automatically.</td>
+    <td><strong>Logarithmic</strong></td>
+    <td>One or both axes are drawn on a base-10 logarithmic scale.
+        Select the desired combination with the sub-mode radio buttons that
+        appear below the <em>Logarithmic scale</em> option (see table below).
+        All logarithmic axis values must be strictly positive; any range
+        boundary ≤ 0 is automatically clamped to 10<sup>−3</sup>.</td>
+  </tr>
+</table>
+
+<h3>Logarithmic Sub-Modes</h3>
+<p>These radio buttons are enabled only when <em>Logarithmic scale</em> is selected.</p>
+<table>
+  <tr><th>Sub-Mode</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Log X, Linear Y</strong></td>
+    <td>X-axis is logarithmic, Y-axis is linear.  Useful for plotting functions
+        that vary slowly over many orders of magnitude in X (e.g. frequency
+        response).</td>
+  </tr>
+  <tr>
+    <td><strong>Linear X, Log Y</strong></td>
+    <td>X-axis is linear, Y-axis is logarithmic (classic semi-log plot).
+        Useful for exponential growth or decay curves.</td>
+  </tr>
+  <tr>
+    <td><strong>Log X, Log Y</strong></td>
+    <td>Both axes are logarithmic (log-log plot).  Useful for power-law
+        relationships such as <code>y = x^n</code>, which appear as straight
+        lines on a log-log scale.</td>
   </tr>
 </table>
 <table>

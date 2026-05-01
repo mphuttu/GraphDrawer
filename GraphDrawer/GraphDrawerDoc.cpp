@@ -70,6 +70,11 @@ CGraphDrawerDoc::CGraphDrawerDoc() : m_sizDoc(850,1100)
 	m_DrawOptionsData.dXMax =  10.0;
 	m_DrawOptionsData.dYMin = -10.0;
 	m_DrawOptionsData.dYMax =  10.0;
+	// Scale mode defaults
+	m_DrawOptionsData.scaleMode = 0;  // equal scale
+	m_DrawOptionsData.scaleX    = 1.0;
+	m_DrawOptionsData.scaleY    = 1.0;
+	m_DrawOptionsData.logMode   = 1;  // default sub-mode: Linear X, Log Y
 
 	// Custom expression
 	m_bDrawCustomFunction  = FALSE;
@@ -352,6 +357,35 @@ void DrawCoordinateAxes(CDC* pDC, BOOL bShowTicks, int nTicksInterval,
 				}
 			}
 		}
+		// Lineaariset Y-tikut kun Y ei ole logaritminen (LogX + LinY -tila)
+		if (!ct.bLogY)
+		{
+			double yRange2 = ct.yMax - ct.yMin;
+			auto niceStepY = [](double range) -> double {
+				if (range <= 0.0) return 1.0;
+				double rawStep = range / 8.0;
+				double magnitude = std::pow(10.0, std::floor(std::log10(rawStep)));
+				double norm = rawStep / magnitude;
+				return ((norm < 1.5) ? 1.0 : (norm < 3.5) ? 2.0 : (norm < 7.5) ? 5.0 : 10.0) * magnitude;
+			};
+			double stepY2 = niceStepY(yRange2);
+			double firstY2 = std::ceil(ct.yMin / stepY2) * stepY2;
+			for (double ty = firstY2; ty <= ct.yMax + 1e-9; ty += stepY2)
+			{
+				CPoint tp = ct.ToLogical(yAxisX, ty);
+				pDC->MoveTo(tp.x - tickHalf, tp.y);
+				pDC->LineTo(tp.x + tickHalf, tp.y);
+				if (bShowLabels)
+				{
+					CString s;
+					if (std::abs(ty - std::round(ty)) < 1e-9)
+						s.Format(_T("%g"), std::round(ty));
+					else
+						s.Format(_T("%g"), ty);
+					pDC->TextOutW(tp.x + tickHalf + 3, tp.y, s);
+				}
+			}
+		}
 		return;
 	}
 
@@ -561,7 +595,8 @@ void CGraphDrawerDoc::SetCustomExpression(const CString& expr, BOOL bDraw,
 	params->strExpr       = expr;
 	params->xStart        = xStart;
 	params->xEnd          = xEnd;
-	params->bLogX         = false; // Puolilog: X aina lineaarinen
+	params->bLogX         = (m_DrawOptionsData.scaleMode == 2) &&
+	                        (m_DrawOptionsData.logMode == 0 || m_DrawOptionsData.logMode == 2);
 	// Adapt step to always sample ~80 000 points regardless of range width.
 	{
 		double range = xEnd - xStart;
@@ -819,7 +854,8 @@ static void SampleImplicit(const CString& exprF, double x0, double x1, double y0
 // ---------------------------------------------------------------------------
 void CGraphDrawerDoc::AddUserCurve(const UserCurve& curveDef)
 {
-	const bool bLogX = (m_DrawOptionsData.scaleMode == 2);
+	const bool bLogX = (m_DrawOptionsData.scaleMode == 2) &&
+	                   (m_DrawOptionsData.logMode == 0 || m_DrawOptionsData.logMode == 2);
 	UserCurve c = curveDef;
 	c.points.clear();
 	c.segments.clear();
@@ -859,7 +895,8 @@ void CGraphDrawerDoc::SetUserCurveVisible(int idx, BOOL bVisible)
 
 void CGraphDrawerDoc::RecomputeUserCurves()
 {
-	const bool bLogX = (m_DrawOptionsData.scaleMode == 2);
+	const bool bLogX = (m_DrawOptionsData.scaleMode == 2) &&
+	                   (m_DrawOptionsData.logMode == 0 || m_DrawOptionsData.logMode == 2);
 	CSingleLock lock(&m_csUserCurves, TRUE);
 	for (auto& c : m_vecUserCurves)
 	{

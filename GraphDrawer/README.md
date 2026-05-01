@@ -105,30 +105,30 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
 | Functions | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `cosh`, `tanh`, `exp`, `log`/`ln`, `log10`, `sqrt`, `abs`, `sign`, `floor`, `ceil`, `round` |
 | Grouping | Parentheses `(` `)` |
 
-## Uutta 2026-04
-- Polaarikäyrät: Käyttäjä voi lisätä käyriä muodossa r = f(φ), esim. spiraalit ja ruusukäyrät.
-- Implisiittikäyrät: Käyttäjä voi lisätä käyriä muodossa f(x, y) = 0, esim. Astroidi, ympyrä, ellipsi.
+## What's New in 2026-04
+- **Polar curves**: add curves of the form r = f(φ), e.g. spirals and rose curves.
+- **Implicit curves**: add curves of the form f(x, y) = 0, e.g. astroid, circle, ellipse.
 
-## Uutta 2026-05 — Asteikkotilat ja pikselipohjainen piirto
+## What's New in 2026-05 — Scale Modes and Pixel-Based Rendering
 
-### Kolme asteikkotilaa (*Draw Options › Scale Mode*)
+### Three Scale Modes (*Draw Options › Scale Mode*)
 
-| Tila | Kuvaus |
-|------|--------|
-| **Equal Scale** | X- ja Y-akseleilla on fyysisesti sama yksikkökoko pikseleinä. Ympyrä `x² + y² = 1` näkyy täydellisenä ympyränä — ei ellipsinä. |
-| **Free Scale** | Käyttäjä asettaa erikseen X- ja Y-asteikon senttimetreissä per matemaattinen yksikkö. |
-| **Semi-Log** | Y-akseli on logaritminen, X-akseli lineaarinen (puolilogaritminen asteikko). |
+| Mode | Description |
+|------|-------------|
+| **Equal Scale** | Both axes use the same number of pixels per mathematical unit, regardless of the monitor's DPI or aspect ratio.  A circle `x² + y² = 1` is drawn as a true circle, not an ellipse. |
+| **Free Scale** | Set independent X and Y scales in centimetres per unit via the *Scale X* and *Scale Y* fields. |
+| **Logarithmic** | One or both axes are logarithmic (base 10).  Select the sub-mode with the radio buttons next to the *Logarithmic scale* option: **Log X, Linear Y** / **Linear X, Log Y** / **Log X, Log Y**.  Axis values must be strictly positive. |
 
-### Tekninen toteutus
-- Näyttöpiirto käyttää nyt **pikselikoordinaatteja** (Windows `MM_TEXT`) suoraan
-  `GetClientRect`:stä — ei enää `MM_LOMETRIC`-muunnosta, joka antoi epäluotettavan
-  kuvasuhteen non-square-DPI-näytöillä.
-- Tulostus käyttää edelleen `MM_LOMETRIC`-tilaa.
-- Equal Scale -tilassa `aspect = w/h` laajennetaan pienempi akseli niin, että
-  1 matemaattinen yksikkö vie täsmälleen saman pikselimäärän molemmissa suunnissa.
-- Tikutusaskel (`niceStep`) pakotetaan samaksi X- ja Y-akseleille kun skaalat ovat
-  yhtä suuret, jotta tikut näyttävät fyysisesti yhtä tiheiltä.
-- Hiirella panorointi käyttää oikeaa pikseliä/yksikkö-suhdetta kaikissa tiloissa.
+### Technical Notes
+- Screen rendering now uses **pixel coordinates** (`MM_TEXT`) obtained directly
+  from `GetClientRect` — no more `MM_LOMETRIC` conversion, which could produce
+  incorrect aspect ratios on non-square-DPI monitors.
+- Print rendering still uses `MM_LOMETRIC`.
+- In Equal Scale mode, `aspect = w/h` expands the shorter axis so that
+  1 mathematical unit spans exactly the same number of pixels in both directions.
+- The tick step (`niceStep`) is forced to the same value for both axes when the
+  scales are equal, so tick marks appear physically equally dense in both directions.
+- Mouse panning uses the correct pixels-per-unit ratio in every scale mode.
 
 ## Help
 

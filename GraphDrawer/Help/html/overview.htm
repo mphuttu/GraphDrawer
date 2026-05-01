@@ -19,9 +19,17 @@ functions on a 2-D Cartesian coordinate system.  It was written in C++ using the
 Microsoft Foundation Classes (MFC) and targets both 32-bit (Win32) and 64-bit (x64)
 Windows platforms.</p>
 
-<p><b>Uutta 2026-04:</b> Ohjelma tukee nyt myös polaarikäyriä (r = f(φ)) ja implisiittikäyriä (f(x, y) = 0). Voit lisätä esimerkiksi Astroidin: pow(abs(x),2/3)+pow(abs(y),2/3)-1 = 0.</p>
+<p><b>New in 2026-04:</b> The application now supports <strong>polar curves</strong>
+(r&nbsp;=&nbsp;f(φ)) and <strong>implicit curves</strong> (f(x,&nbsp;y)&nbsp;=&nbsp;0).
+For example, add an astroid with <code>pow(abs(x),2/3)+pow(abs(y),2/3)-1 = 0</code>.</p>
 
-<p><b>Uutta 2026-05:</b> Kolme asteikkotilaa — <em>Equal Scale</em> (1:1 pikselisuhde, ympyrät näyttävät ympyröiltä), <em>Free Scale</em> (käyttäjän määrittämä cm/yksikkö) ja <em>Semi-Log</em> (logaritminen Y-akseli). Kaikki piirto käyttää nyt pikselikoordinaatteja, joten kuvasuhde on luotettava kaikilla näytöillä.</p>
+<p><b>New in 2026-05:</b> Three scale modes are now available in Draw Options:
+<em>Equal Scale</em> (true 1:1 pixel ratio — circles look circular),
+<em>Free Scale</em> (user-defined cm/unit for each axis), and
+<em>Logarithmic</em> (one or both axes on a log₂ base-10 scale, with three
+sub-modes: Log X + Linear Y, Linear X + Log Y, or Log X + Log Y).
+All screen rendering uses pixel coordinates, so the aspect ratio is
+correct on every display.</p>
 
 <h2>Features</h2>
 <ul>
@@ -35,7 +43,8 @@ Windows platforms.</p>
   <li>Set the <strong>visible axis range</strong> (x min/max and y min/max) in Draw Options.</li>
   <li>Choose a <strong>scale mode</strong>: <em>Equal Scale</em> (true 1:1 aspect, circles look
       circular), <em>Free Scale</em> (custom cm/unit for each axis), or
-      <em>Semi-Log</em> (logarithmic Y axis).</li>
+      <em>Logarithmic</em> (one or both axes on a base-10 log scale, with three
+      sub-modes: Log X + Linear Y, Linear X + Log Y, or Log X + Log Y).</li>
   <li>Customise coordinate axes: colour, line thickness, tick marks and labels.</li>
   <li>Choose a background colour.</li>
   <li>Print and print-preview — output matches the on-screen view exactly.</li>
