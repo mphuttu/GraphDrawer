@@ -21,7 +21,7 @@
     <param name="Local" value="html\drawing_functions.htm">
   </OBJECT>
   <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="Custom Expression y = f(x)">
+    <param name="Name" value="Custom Expression &amp; Parametric Curves">
     <param name="Local" value="html\custom_expression.htm">
   </OBJECT>
   <LI> <OBJECT type="text/sitemap">
@@ -29,7 +29,7 @@
     <param name="Local" value="html\draw_options.htm">
   </OBJECT>
   <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="Keyboard Shortcuts">
+    <param name="Name" value="Keyboard Shortcuts &amp; Mouse Controls">
     <param name="Local" value="html\keyboard.htm">
   </OBJECT>
 </UL>
