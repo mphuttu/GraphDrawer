@@ -1071,6 +1071,29 @@ void CGraphDrawerDoc::RemoveUserCurve(int idx)
 	UpdateAllViews(NULL);
 }
 
+void CGraphDrawerDoc::ReplaceUserCurve(int idx, const UserCurve& curveDef)
+{
+	const bool bLogX = (m_DrawOptionsData.scaleMode == 2) &&
+	                   (m_DrawOptionsData.logMode == 0 || m_DrawOptionsData.logMode == 2);
+	UserCurve c = curveDef;
+	c.points.clear();
+	c.segments.clear();
+	if (c.type == UCT_YFX)
+		SampleYFX(c.strExprY, c.xStart, c.xEnd, c.points, bLogX);
+	else if (c.type == UCT_PARAMETRIC)
+		SampleParametric(c.strExprX, c.strExprYPar, c.tStart, c.tEnd, c.points);
+	else if (c.type == UCT_POLAR)
+		SamplePolar(c.strExprPolar, c.phiStart, c.phiEnd, c.points);
+	else if (c.type == UCT_IMPLICIT)
+		SampleImplicit(c.strExprImplicit, c.xStartImp, c.xEndImp, c.yStartImp, c.yEndImp, c.segments);
+	{
+		CSingleLock lock(&m_csUserCurves, TRUE);
+		if (idx >= 0 && idx < (int)m_vecUserCurves.size())
+			m_vecUserCurves[idx] = std::move(c);
+	}
+	UpdateAllViews(NULL);
+}
+
 void CGraphDrawerDoc::SetUserCurveVisible(int idx, BOOL bVisible)
 {
 	{

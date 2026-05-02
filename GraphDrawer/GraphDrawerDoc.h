@@ -256,6 +256,9 @@ public:
 	// Add a new curve (computes points synchronously, then invalidates views).
 	void AddUserCurve(const UserCurve& curve);
 
+	// Replace the curve at the given index with an updated definition.
+	void ReplaceUserCurve(int idx, const UserCurve& curve);
+
 	// Remove the curve at the given index.
 	void RemoveUserCurve(int idx);
 

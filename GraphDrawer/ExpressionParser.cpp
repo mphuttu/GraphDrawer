@@ -22,7 +22,7 @@ struct SyntaxError : public std::runtime_error {
 // Construction
 // ---------------------------------------------------------------------------
 CExpressionParser::CExpressionParser()
-    : m_pos(0), m_x(0.0)
+    : m_pos(0), m_x(0.0), m_y(0.0)
 {
 }
 
@@ -145,6 +145,24 @@ bool CExpressionParser::Parse(const CString& strExpr)
     return true;
 }
 
+bool CExpressionParser::Evaluate(double x, double y, double& result) const
+{
+    m_pos = 0;
+    m_x   = x;
+    m_y   = y;
+    try
+    {
+        result = ParseExpr();
+        if (!_finite(result) || _isnan(result))
+            return false;
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
 bool CExpressionParser::Evaluate(double x, double& result) const
 {
     m_pos = 0;
@@ -160,6 +178,13 @@ bool CExpressionParser::Evaluate(double x, double& result) const
     {
         return false;
     }
+}
+
+bool CExpressionParser::EvaluateT(double t, double& result) const
+{
+    // Identical to Evaluate — 't' and 'x' are both recognised as the
+    // free variable in ParsePrimary, so we simply set m_x = t.
+    return Evaluate(t, result);
 }
 
 // ---------------------------------------------------------------------------
@@ -182,10 +207,12 @@ void CExpressionParser::Advance() const
 // ---------------------------------------------------------------------------
 // Recursive-descent grammar
 //   expr    = term (('+' | '-') term)*
-//   term    = power (('*' | '/') power)*
-//   power   = unary ('^' unary)*      (right-associative)
-//   unary   = '-' unary | primary
-//   primary = number | 'x' | 'pi' | 'e' | ident '(' expr ')' | '(' expr ')'
+//   term    = unary (('*' | '/') unary)*
+//   unary   = '-' unary | power
+//   power   = primary ('^' unary)?    (right-associative via unary→power chain)
+//   primary = number | 'x' | 'pi' | 'e' | func(expr) | '(' expr ')'
+//
+// Unary minus has lower precedence than '^', so -x^2 == -(x^2).
 // ---------------------------------------------------------------------------
 double CExpressionParser::ParseExpr() const
 {
@@ -202,12 +229,12 @@ double CExpressionParser::ParseExpr() const
 
 double CExpressionParser::ParseTerm() const
 {
-    double lhs = ParsePower();
+    double lhs = ParseUnary();
     while (Current().type == TOK_MUL || Current().type == TOK_DIV)
     {
         bool mul = (Current().type == TOK_MUL);
         Advance();
-        double rhs = ParsePower();
+        double rhs = ParseUnary();
         if (!mul)
         {
             if (rhs == 0.0) throw std::runtime_error("Division by zero");
@@ -223,11 +250,11 @@ double CExpressionParser::ParseTerm() const
 
 double CExpressionParser::ParsePower() const
 {
-    double base = ParseUnary();
+    double base = ParsePrimary();
     if (Current().type == TOK_POW)
     {
         Advance();
-        double exponent = ParsePower(); // right-associative: recurse for exponent
+        double exponent = ParseUnary(); // right-associative: unary → power chain
         if (base < 0.0 && exponent != std::floor(exponent))
             throw std::runtime_error("Complex result from negative base with fractional exponent");
         return std::pow(base, exponent);
@@ -242,7 +269,7 @@ double CExpressionParser::ParseUnary() const
         Advance();
         return -ParseUnary();
     }
-    return ParsePrimary();
+    return ParsePower();
 }
 
 double CExpressionParser::ParsePrimary() const
@@ -260,16 +287,16 @@ double CExpressionParser::ParsePrimary() const
     // Identifier: constant, variable, or function call
     if (tok.type == TOK_IDENT)
     {
-        std::wstring name = tok.strVal;
+        std::wstring id = Current().strVal;
         Advance();
-
-        // Built-in constants
-        if (name == L"pi")  return 3.14159265358979323846;
-        if (name == L"e")   return 2.71828182845904523536;
-
-        // Variable
-        if (name == L"x")   return m_x;
-
+        if (id == L"x" || id == L"t")
+            return m_x;
+        if (id == L"y")
+            return m_y;
+        if (id == L"pi")
+            return 3.14159265358979323846;
+        if (id == L"e")
+            return 2.71828182845904523536;
         // Function call: name '(' expr ')'
         if (Current().type == TOK_LPAREN)
         {
@@ -278,7 +305,7 @@ double CExpressionParser::ParsePrimary() const
             if (Current().type != TOK_RPAREN)
                 throw SyntaxError("Missing closing parenthesis");
             Advance(); // consume ')'
-            return CallFunction(name, arg);
+            return CallFunction(id, arg);
         }
 
         throw SyntaxError("Unknown identifier");

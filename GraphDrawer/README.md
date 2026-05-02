@@ -80,11 +80,14 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
 1. Open the **Draw Functions** palette.
 2. Click **Add…** in the *User-Defined Curves* group.
 3. In the dialog that opens:
-   - Choose **y = f(x)** or **Parametric** (x(t), y(t)).
-   - Enter the expression(s), the x- or t-range, an optional label, and a colour.
+   - Choose **y = f(x)**, **Parametric**, **Polar**, or **Implicit**.
+   - Enter the expression(s), the range, an optional label, and a colour.
+   - Range fields accept constant expressions: `2*pi`, `-pi`, `e^2`, etc.
    - Click **OK**.
-4. The new curve appears in the checkbox list.  Uncheck it to hide it; click
-   **Remove** to delete it.
+4. The new curve appears in the checkbox list.  Uncheck it to hide it.
+5. To **edit** an existing curve: select it in the list and click **Edit…** — the
+   dialog reopens pre-filled; confirm with **OK** to apply changes.
+6. Click **Remove** to delete the selected curve.
 
 ### Parametric Curve Examples
 
@@ -101,9 +104,26 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
 | Variable | `x` (for y=f(x) curves) or `t` (for parametric curves) |
 | Constants | `pi`, `e` |
 | Arithmetic | `+`, `-`, `*`, `/` |
-| Power | `x^3`, `2^x` (right-associative) |
+| Power | `x^3`, `2^x` (right-associative; unary `-` has lower precedence, so `-x^2` = `-(x^2)`) |
 | Functions | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `cosh`, `tanh`, `exp`, `log`/`ln`, `log10`, `sqrt`, `abs`, `sign`, `floor`, `ceil`, `round` |
 | Grouping | Parentheses `(` `)` |
+
+## What's New in 2026-05 (latest)
+
+### Expression parser fixes and improvements
+- **Negative exponents now work correctly**: `exp(-x^2)` is now evaluated as
+  `exp(-(x^2))`, i.e. unary minus has lower precedence than `^`.
+  Previously `-x^2` was incorrectly treated as `(-x)^2`.
+- **`pi` and `e` in range fields**: all numeric input fields that accept a range
+  value (x from/to, t from/to, φ from/to, implicit x/y from/to, and the
+  custom-expression x-range) now accept arbitrary constant expressions such as
+  `2*pi`, `-pi/2`, or `e^2` in addition to plain numbers.
+
+### User-defined curve editing
+- **Edit… button** added to the *User-Defined Curves* group in the Draw Functions
+  palette.  Select a curve in the list and click **Edit…** to re-open the
+  *Add Curve* dialog pre-filled with the curve's current settings.  Confirm with
+  **OK** to replace the curve in-place, or **Cancel** to leave it unchanged.
 
 ## What's New in 2026-04
 - **Polar curves**: add curves of the form r = f(φ), e.g. spirals and rose curves.

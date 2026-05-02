@@ -110,6 +110,7 @@
 #define IDC_LOG_X_ONLY                 1091   // Log X, Linear Y
 #define IDC_LOG_Y_ONLY                 1092   // Linear X, Log Y
 #define IDC_LOG_XY                     1093   // Log X, Log Y
+#define IDC_EDITCURVE_BUTTON           1094
 #define ID_DRAW_DRAWOPTIONS             32771
 #define ID_VIEW_DRAWFUNCTIONS           32773
 #define ID_HELP_CONTENTS                32774

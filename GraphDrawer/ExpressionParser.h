@@ -29,6 +29,13 @@ public:
     // Evaluate for a given x. Returns false on domain/math error.
     bool    Evaluate(double x, double& result) const;
 
+    // Evaluate for a given t (parametric curves). Identical to Evaluate but
+    // the expression may use 't' (or 'x') as the free variable.
+    bool    EvaluateT(double t, double& result) const;
+
+    // Evaluate for given x and y (for implicit curves)
+    bool    Evaluate(double x, double y, double& result) const;
+
     // Error description (valid after Parse returns false).
     CString GetError() const { return m_strError; }
 
@@ -52,6 +59,7 @@ private:
     std::vector<Token>  m_tokens;
     mutable size_t      m_pos;
     mutable double      m_x;
+    mutable double      m_y;
     mutable CString     m_strError;
 
     bool   Tokenize(const std::wstring& expr);

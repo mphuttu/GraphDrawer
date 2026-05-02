@@ -13,13 +13,111 @@
   th { background: #e8f0fb; }
   .swatch { display: inline-block; width: 18px; height: 18px; border: 1px solid #999;
             vertical-align: middle; margin-right: 6px; border-radius: 3px; }
+  .note { background: #eef4ff; border-left: 4px solid #1a5fa8; padding: 8px 14px; margin: 14px 0; }
 </style>
 </head>
 <body>
 <h1>Built-in Functions</h1>
 
 <p>The following functions can be enabled via the <em>Draw Functions</em> palette.
-Each is plotted in a distinct colour.</p>
+Each is plotted in a distinct colour over the current visible coordinate range.</p>
+
+<table>
+  <tr><th>Checkbox label</th><th>Function</th><th>Colour</th><th>Notes</th></tr>
+  <tr>
+    <td>Draw Sine</td><td>y = sin(x)</td>
+    <td><span class="swatch" style="background:#ff3333;"></span> Red</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Cosine</td><td>y = cos(x)</td>
+    <td><span class="swatch" style="background:#33ff33;"></span> Green</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Tangent</td><td>y = tan(x)</td>
+    <td><span class="swatch" style="background:#3399ff;"></span> Blue</td>
+    <td>Asymptotes at x = ±π/2, ±3π/2, …</td>
+  </tr>
+  <tr>
+    <td>Draw Cotangent</td><td>y = cot(x)</td>
+    <td><span class="swatch" style="background:#ff3a00;"></span> Orange-red</td>
+    <td>Asymptotes at x = 0, ±π, …</td>
+  </tr>
+  <tr>
+    <td>Draw Exponent</td><td>y = e<sup>x</sup></td>
+    <td><span class="swatch" style="background:#990000;"></span> Dark red</td>
+    <td>Grows very rapidly for large x.</td>
+  </tr>
+  <tr>
+    <td>Draw Natural Logarithm</td><td>y = ln(x)</td>
+    <td><span class="swatch" style="background:#006666;"></span> Teal</td>
+    <td>Defined only for x &gt; 0.</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Sine</td><td>y = arcsin(x)</td>
+    <td><span class="swatch" style="background:#cc00cc;"></span> Magenta</td>
+    <td>Defined for x ∈ [−1, 1], range [−π/2, π/2].</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Cosine</td><td>y = arccos(x)</td>
+    <td><span class="swatch" style="background:#a7c668;"></span> Yellow-green</td>
+    <td>Defined for x ∈ [−1, 1], range [0, π].</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Tangent</td><td>y = arctan(x)</td>
+    <td><span class="swatch" style="background:#ff8000;"></span> Orange</td>
+    <td>Range (−π/2, π/2).</td>
+  </tr>
+  <tr>
+    <td>Draw Arcus Cotangent</td><td>y = arccot(x)</td>
+    <td><span class="swatch" style="background:#f5d929;"></span> Yellow</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Sine</td><td>y = sinh(x)</td>
+    <td><span class="swatch" style="background:#ff3333;"></span> Red</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Cosine</td><td>y = cosh(x)</td>
+    <td><span class="swatch" style="background:#006600;"></span> Dark green</td>
+    <td>Always ≥ 1.</td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Tangent</td><td>y = tanh(x)</td>
+    <td><span class="swatch" style="background:#5a92ae;"></span> Steel blue</td>
+    <td>Range (−1, 1).</td>
+  </tr>
+  <tr>
+    <td>Draw Hyperbolic Cotangent</td><td>y = coth(x)</td>
+    <td><span class="swatch" style="background:#330066;"></span> Purple</td>
+    <td>Asymptote at x = 0.</td>
+  </tr>
+</table>
+
+<div class="note">
+  All built-in functions are plotted over the current visible x-range.  Zoom or
+  pan the view, or change the range in
+  <a href="draw_options.htm">Draw Options</a>, to see more or fewer periods.
+</div>
+
+<h2>User-Defined Curves</h2>
+<p>In addition to the 14 built-in functions you can add your own curves &mdash; either
+<em>y = f(x)</em>, <em>parametric x(t), y(t)</em>, <em>polar r = f(k)</em>, or
+<em>implicit f(x,&nbsp;y) = 0</em> &mdash; using the <strong>Add&hellip;</strong>
+button in the <em>User-Defined Curves</em> group.</p>
+<p>To <strong>edit</strong> an existing curve, select it in the list and click
+<strong>Edit&hellip;</strong>.  The Add Curve dialog reopens pre-filled; click
+<strong>OK</strong> to apply your changes.</p>
+<p>All range fields (x from/to, t from/to, &phi; from/to) accept constant
+expressions such as <code>2*pi</code>, <code>-pi/2</code>, or <code>e^2</code> in
+addition to plain numbers.</p>
+<p>See <a href="custom_expression.htm">Custom Expression &amp; Parametric Curves</a>
+for details and examples.</p>
+</body>
+</html>
+
 
 <table>
   <tr><th>Checkbox label</th><th>Function</th><th>Colour</th><th>Notes</th></tr>

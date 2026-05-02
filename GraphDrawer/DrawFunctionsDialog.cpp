@@ -10,8 +10,28 @@
 
 #include "MainFrm.h"
 #include "GraphDrawerDoc.h"
+#include "AddCurveDialog.h"
 
 // CDrawFunctionsDialog dialog
+
+// ---------------------------------------------------------------------------
+// Helper: evaluate a range-field string as a constant expression.
+// Accepts plain numbers or expressions containing pi, e, arithmetic.
+// ---------------------------------------------------------------------------
+static bool ParseRangeExpr(const CString& str, double& result)
+{
+	CExpressionParser p;
+	if (p.Parse(str))
+	{
+		double v = 0.0;
+		if (p.Evaluate(0.0, v) && _finite(v))
+		{
+			result = v;
+			return true;
+		}
+	}
+	return false;
+}
 
 IMPLEMENT_DYNAMIC(CDrawFunctionsDialog, CDialog)
 
@@ -19,8 +39,8 @@ CDrawFunctionsDialog::CDrawFunctionsDialog(CWnd* pParent /*=NULL*/)
 	: CDialog(CDrawFunctionsDialog::IDD, pParent)
 	, m_strExpression(_T(""))
 	, m_bDrawCustomFunction(FALSE)
-	, m_dRangeStart(-20.0)
-	, m_dRangeEnd(20.0)
+	, m_strRangeFrom(_T("-20"))
+	, m_strRangeTo(_T("20"))
 	, m_bDrawSine(FALSE)
 	, m_bDrawCosine(FALSE)
 	, m_bDrawTan(FALSE)
@@ -48,8 +68,8 @@ void CDrawFunctionsDialog::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	DDX_Text(pDX,  IDC_FUNCEDIT,             m_strExpression);
 	DDX_Check(pDX, IDC_DRAWCUSTOMCHECK,      m_bDrawCustomFunction);
-	DDX_Text(pDX,  IDC_RANGEEDIT_FROM,       m_dRangeStart);
-	DDX_Text(pDX,  IDC_RANGEEDIT_TO,         m_dRangeEnd);
+	DDX_Text(pDX,  IDC_RANGEEDIT_FROM,       m_strRangeFrom);
+	DDX_Text(pDX,  IDC_RANGEEDIT_TO,         m_strRangeTo);
 	DDX_Check(pDX, IDC_DRAWSINECHECK,        m_bDrawSine);
 	DDX_Check(pDX, IDC_DRAWCOSINECHECK, m_bDrawCosine);
 	DDX_Check(pDX, IDC_DRAWTANCHECK, m_bDrawTan);
@@ -64,6 +84,7 @@ void CDrawFunctionsDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_DRAWHYPERBOLICCOSINECHECK, m_bDrawHyperbolicCosine);
 	DDX_Check(pDX, IDC_DRAWHYPERBOLICTANGENTCHECK, m_bDrawHyperbolicTan);
 	DDX_Check(pDX, IDC_DRAWHYPERBOLICCOTANGENTCHECK, m_bDrawHyperbolicCotan);
+	DDX_Control(pDX, IDC_CURVELIST, m_checkListCurves);
 }
 
 
@@ -84,6 +105,10 @@ BEGIN_MESSAGE_MAP(CDrawFunctionsDialog, CDialog)
 	ON_BN_CLICKED(IDC_DRAWHYPERBOLICCOSINECHECK, &CDrawFunctionsDialog::OnClickedDrawhyperboliccosinecheck)
 	ON_BN_CLICKED(IDC_DRAWHYPERBOLICTANGENTCHECK, &CDrawFunctionsDialog::OnClickedDrawhyperbolictangentcheck)
 	ON_BN_CLICKED(IDC_DRAWHYPERBOLICCOTANGENTCHECK, &CDrawFunctionsDialog::OnClickedDrawhyperboliccotangentcheck)
+	ON_BN_CLICKED(IDC_ADDCURVE_BUTTON,    &CDrawFunctionsDialog::OnClickedAddCurve)
+	ON_BN_CLICKED(IDC_REMOVECURVE_BUTTON, &CDrawFunctionsDialog::OnClickedRemoveCurve)
+	ON_BN_CLICKED(IDC_EDITCURVE_BUTTON,   &CDrawFunctionsDialog::OnClickedEditCurve)
+	ON_CLBN_CHKCHANGE(IDC_CURVELIST,      &CDrawFunctionsDialog::OnCheckChangedCurveList)
 END_MESSAGE_MAP()
 
 
@@ -424,17 +449,21 @@ void CDrawFunctionsDialog::OnClickedDrawcustomcheck()
 	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
 	if (!pDoc) return;
 
-	// UpdateData returns FALSE (and shows a warning) if a field is non-numeric.
 	if (!UpdateData(TRUE)) return;
 
-	if (m_dRangeStart >= m_dRangeEnd)
+	double dFrom = 0.0, dTo = 0.0;
+	if (!ParseRangeExpr(m_strRangeFrom, dFrom) || !ParseRangeExpr(m_strRangeTo, dTo))
+	{
+		AfxMessageBox(_T("Invalid range value. Use a number or an expression like '2*pi'."), MB_OK | MB_ICONWARNING);
+		return;
+	}
+	if (dFrom >= dTo)
 	{
 		AfxMessageBox(_T("Range start must be less than range end."), MB_OK | MB_ICONWARNING);
 		return;
 	}
 
-	pDoc->SetCustomExpression(m_strExpression, m_bDrawCustomFunction,
-	                          m_dRangeStart, m_dRangeEnd);
+	pDoc->SetCustomExpression(m_strExpression, m_bDrawCustomFunction, dFrom, dTo);
 }
 
 
@@ -451,11 +480,13 @@ void CDrawFunctionsDialog::OnChangeExpressionEdit()
 
 	if (!UpdateData(TRUE)) return;
 
-	if (m_dRangeStart >= m_dRangeEnd)
-		return;  // silent: user is still typing — no popup on every keystroke
+	double dFrom = 0.0, dTo = 0.0;
+	if (!ParseRangeExpr(m_strRangeFrom, dFrom) || !ParseRangeExpr(m_strRangeTo, dTo))
+		return; // silent: user is still typing
+	if (dFrom >= dTo)
+		return;
 
-	pDoc->SetCustomExpression(m_strExpression, TRUE,
-	                          m_dRangeStart, m_dRangeEnd);
+	pDoc->SetCustomExpression(m_strExpression, TRUE, dFrom, dTo);
 }
 
 
@@ -490,10 +521,14 @@ BOOL CDrawFunctionsDialog::OnInitDialog()
 	m_bDrawHyperbolicCotan  = pDoc->m_bDrawHyperbolicCotan;
 	m_bDrawCustomFunction   = pDoc->m_bDrawCustomFunction;
 	m_strExpression         = pDoc->m_strCustomExpression;
-	m_dRangeStart           = pDoc->m_dCustomRangeStart;
-	m_dRangeEnd             = pDoc->m_dCustomRangeEnd;
+	m_strRangeFrom.Format(L"%g", pDoc->m_dCustomRangeStart);
+	m_strRangeTo.Format(L"%g", pDoc->m_dCustomRangeEnd);
 
 	UpdateData(FALSE);
+
+	// Populate user-curve list.
+	RefreshCurveList();
+
 	return TRUE;
 }
 
@@ -524,13 +559,18 @@ void CDrawFunctionsDialog::OnOK()
 	pDoc->m_bDrawHyperbolicCotan  = m_bDrawHyperbolicCotan;
 
 	// Apply custom expression (also starts background thread if enabled)
-	if (m_dRangeStart >= m_dRangeEnd)
+	double dFrom = 0.0, dTo = 0.0;
+	if (!ParseRangeExpr(m_strRangeFrom, dFrom) || !ParseRangeExpr(m_strRangeTo, dTo))
+	{
+		AfxMessageBox(_T("Invalid range value. Use a number or an expression like '2*pi'."), MB_OK | MB_ICONWARNING);
+		return;
+	}
+	if (dFrom >= dTo)
 	{
 		AfxMessageBox(_T("Range start must be less than range end."), MB_OK | MB_ICONWARNING);
 		return;
 	}
-	pDoc->SetCustomExpression(m_strExpression, m_bDrawCustomFunction,
-	                          m_dRangeStart, m_dRangeEnd);
+	pDoc->SetCustomExpression(m_strExpression, m_bDrawCustomFunction, dFrom, dTo);
 
 	pDoc->UpdateAllViews(NULL);
 	// Do NOT call CDialog::OnOK() — that would destroy the modeless window.
@@ -542,4 +582,104 @@ void CDrawFunctionsDialog::OnCancel()
 	ShowWindow(SW_HIDE);
 	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
 	if (pWnd) pWnd->SetDrawFuncVisible(FALSE);
+}
+
+// ---------------------------------------------------------------------------
+// User-defined curves — list management
+// ---------------------------------------------------------------------------
+
+void CDrawFunctionsDialog::RefreshCurveList()
+{
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (!pWnd) return;
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	m_checkListCurves.ResetContent();
+
+	CSingleLock lock(&pDoc->m_csUserCurves, TRUE);
+	for (const UserCurve& uc : pDoc->m_vecUserCurves)
+	{
+		int idx = m_checkListCurves.AddString(uc.label);
+		m_checkListCurves.SetCheck(idx, uc.bVisible ? 1 : 0);
+	}
+}
+
+void CDrawFunctionsDialog::OnClickedAddCurve()
+{
+	CAddCurveDialog dlg(this);
+	if (dlg.DoModal() == IDOK)
+	{
+		CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+		if (!pWnd) return;
+		CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+		if (!pDoc) return;
+
+		pDoc->AddUserCurve(dlg.GetResult());
+		RefreshCurveList();
+		pDoc->UpdateAllViews(NULL);
+	}
+}
+
+void CDrawFunctionsDialog::OnClickedRemoveCurve()
+{
+	int idx = m_checkListCurves.GetCurSel();
+	if (idx == LB_ERR) return;
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (!pWnd) return;
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	pDoc->RemoveUserCurve(idx);
+	RefreshCurveList();
+	pDoc->UpdateAllViews(NULL);
+}
+
+void CDrawFunctionsDialog::OnCheckChangedCurveList()
+{
+	int idx = m_checkListCurves.GetCurSel();
+	if (idx == LB_ERR) return;
+
+	int state = m_checkListCurves.GetCheck(idx);
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (!pWnd) return;
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	pDoc->SetUserCurveVisible(idx, state ? TRUE : FALSE);
+	pDoc->UpdateAllViews(NULL);
+}
+
+void CDrawFunctionsDialog::OnClickedEditCurve()
+{
+	int idx = m_checkListCurves.GetCurSel();
+	if (idx == LB_ERR)
+	{
+		AfxMessageBox(_T("Please select a curve to edit."), MB_ICONINFORMATION);
+		return;
+	}
+
+	CMainFrame* pWnd = dynamic_cast<CMainFrame*>(AfxGetMainWnd());
+	if (!pWnd) return;
+	CGraphDrawerDoc* pDoc = dynamic_cast<CGraphDrawerDoc*>(pWnd->GetActiveDocument());
+	if (!pDoc) return;
+
+	UserCurve existing;
+	{
+		CSingleLock lock(&pDoc->m_csUserCurves, TRUE);
+		if (idx < 0 || idx >= (int)pDoc->m_vecUserCurves.size()) return;
+		existing = pDoc->m_vecUserCurves[idx];
+	}
+
+	CAddCurveDialog dlg(this);
+	dlg.PrePopulate(existing);
+
+	if (dlg.DoModal() == IDOK)
+	{
+		pDoc->ReplaceUserCurve(idx, dlg.GetResult());
+		RefreshCurveList();
+		pDoc->UpdateAllViews(NULL);
+	}
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "afxcmn.h"
 
 
 // CDrawFunctionsDialog dialog
@@ -22,8 +23,8 @@ public:
 	// Custom expression
 	CString m_strExpression;
 	BOOL    m_bDrawCustomFunction;
-	double  m_dRangeStart;   // x range lower bound
-	double  m_dRangeEnd;     // x range upper bound
+	CString m_strRangeFrom;   // x range lower bound
+	CString m_strRangeTo;     // x range upper bound
 	afx_msg void OnClickedDrawcustomcheck();
 	afx_msg void OnChangeExpressionEdit();
 
@@ -60,4 +61,15 @@ public:
 	afx_msg void OnClickedDrawhyperbolictangentcheck();
 	BOOL m_bDrawHyperbolicCotan;
 	afx_msg void OnClickedDrawhyperboliccotangentcheck();
+
+	// User-defined curves list (checkbox list box)
+	CCheckListBox m_checkListCurves;
+
+	// Refresh the curve check-list from the document.
+	void RefreshCurveList();
+
+	afx_msg void OnClickedAddCurve();
+	afx_msg void OnClickedRemoveCurve();
+	afx_msg void OnClickedEditCurve();
+	afx_msg void OnCheckChangedCurveList();
 };

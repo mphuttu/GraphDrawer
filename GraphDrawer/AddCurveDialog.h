@@ -16,6 +16,12 @@ public:
 	// The fully-populated curve to retrieve after DoModal() returns IDOK.
 	const UserCurve& GetResult() const { return m_result; }
 
+	// Pre-populate all fields from an existing curve (call before DoModal for Edit).
+	void PrePopulate(const UserCurve& curve);
+
+private:
+	CString   m_strCaption;   // if non-empty, overrides dialog caption in OnInitDialog
+
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);
 	virtual BOOL OnInitDialog();
@@ -28,21 +34,23 @@ public:
 	CString m_strLabel;
 	// y = f(x) mode
 	CString m_strExprYFX;
-	double  m_dXFrom;
-	double  m_dXTo;
+	CString m_strXFrom;
+	CString m_strXTo;
 	// Parametric mode
 	CString m_strExprParX;
 	CString m_strExprParY;
-	double  m_dTFrom;
-	double  m_dTTo;
+	CString m_strTFrom;
+	CString m_strTTo;
 	// Polar mode
 	CString m_strExprPolar;
-	double  m_dPhiFrom;
-	double  m_dPhiTo;
+	CString m_strPhiFrom;
+	CString m_strPhiTo;
 	// Implicit mode
 	CString m_strExprImplicit;
-	double  m_dXFromImp = -2.0, m_dXToImp = 2.0;
-	double  m_dYFromImp = -2.0, m_dYToImp = 2.0;
+	CString m_strXFromImp;
+	CString m_strXToImp;
+	CString m_strYFromImp;
+	CString m_strYToImp;
 
 	COLORREF        m_color;
 	CMFCColorButton m_wndColor;

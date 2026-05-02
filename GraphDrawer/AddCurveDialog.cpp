@@ -2,10 +2,30 @@
 #include "GraphDrawer.h"     // pulls in resource.h
 #include "AddCurveDialog.h"
 #include "resource.h"
+#include "ExpressionParser.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+// ---------------------------------------------------------------------------
+// Helper: evaluate a range-field string as a constant expression.
+// Accepts plain numbers ("3.14") or expressions ("2*pi", "-10", "e^2").
+// ---------------------------------------------------------------------------
+static bool ParseRangeExpr(const CString& str, double& result)
+{
+	CExpressionParser p;
+	if (p.Parse(str))
+	{
+		double v = 0.0;
+		if (p.Evaluate(0.0, v) && _finite(v))
+		{
+			result = v;
+			return true;
+		}
+	}
+	return false;
+}
 
 
 IMPLEMENT_DYNAMIC(CAddCurveDialog, CDialog)
@@ -15,12 +35,18 @@ CAddCurveDialog::CAddCurveDialog(CWnd* pParent)
 	, m_nCurveType(0)
 	, m_strLabel(L"")
 	, m_strExprYFX(L"")
-	, m_dXFrom(-10.0)
-	, m_dXTo(10.0)
+	, m_strXFrom(L"-10")
+	, m_strXTo(L"10")
 	, m_strExprParX(L"")
 	, m_strExprParY(L"")
-	, m_dTFrom(0.0)
-	, m_dTTo(6.2831853071795864769)   // 2*PI
+	, m_strTFrom(L"0")
+	, m_strTTo(L"2*pi")
+	, m_strPhiFrom(L"0")
+	, m_strPhiTo(L"2*pi")
+	, m_strXFromImp(L"-2")
+	, m_strXToImp(L"2")
+	, m_strYFromImp(L"-2")
+	, m_strYToImp(L"2")
 	, m_color(RGB(255, 255, 0))
 {
 }
@@ -37,23 +63,23 @@ void CAddCurveDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Text   (pDX, IDC_CURVE_LABEL_EDIT,       m_strLabel);
 	// y = f(x)
 	DDX_Text   (pDX, IDC_CURVE_EXPR_YFX_EDIT,    m_strExprYFX);
-	DDX_Text   (pDX, IDC_CURVE_RANGE_FROM,        m_dXFrom);
-	DDX_Text   (pDX, IDC_CURVE_RANGE_TO,          m_dXTo);
+	DDX_Text   (pDX, IDC_CURVE_RANGE_FROM,        m_strXFrom);
+	DDX_Text   (pDX, IDC_CURVE_RANGE_TO,          m_strXTo);
 	// Parametric
 	DDX_Text   (pDX, IDC_CURVE_PARAM_X_EDIT,      m_strExprParX);
 	DDX_Text   (pDX, IDC_CURVE_PARAM_Y_EDIT,      m_strExprParY);
-	DDX_Text   (pDX, IDC_CURVE_TRANGE_FROM,       m_dTFrom);
-	DDX_Text   (pDX, IDC_CURVE_TRANGE_TO,         m_dTTo);
+	DDX_Text   (pDX, IDC_CURVE_TRANGE_FROM,       m_strTFrom);
+	DDX_Text   (pDX, IDC_CURVE_TRANGE_TO,         m_strTTo);
 	// Polar
 	DDX_Text   (pDX, IDC_CURVE_EXPR_POLAR_EDIT,   m_strExprPolar);
-	DDX_Text   (pDX, IDC_POLAR_PHI_FROM,          m_dPhiFrom);
-	DDX_Text   (pDX, IDC_POLAR_PHI_TO,            m_dPhiTo);
+	DDX_Text   (pDX, IDC_POLAR_PHI_FROM,          m_strPhiFrom);
+	DDX_Text   (pDX, IDC_POLAR_PHI_TO,            m_strPhiTo);
 	// Implicit
 	DDX_Text   (pDX, IDC_CURVE_EXPR_IMPLICIT_EDIT, m_strExprImplicit);
-	DDX_Text   (pDX, IDC_IMPLICIT_X_FROM, m_dXFromImp);
-	DDX_Text   (pDX, IDC_IMPLICIT_X_TO, m_dXToImp);
-	DDX_Text   (pDX, IDC_IMPLICIT_Y_FROM, m_dYFromImp);
-	DDX_Text   (pDX, IDC_IMPLICIT_Y_TO, m_dYToImp);
+	DDX_Text   (pDX, IDC_IMPLICIT_X_FROM, m_strXFromImp);
+	DDX_Text   (pDX, IDC_IMPLICIT_X_TO, m_strXToImp);
+	DDX_Text   (pDX, IDC_IMPLICIT_Y_FROM, m_strYFromImp);
+	DDX_Text   (pDX, IDC_IMPLICIT_Y_TO, m_strYToImp);
 
 	DDX_Control(pDX, IDC_CURVE_COLOR_BTN,         m_wndColor);
 }
@@ -72,15 +98,13 @@ BOOL CAddCurveDialog::OnInitDialog()
 
 	// Set initial color on the color button.
 	m_wndColor.SetColor(m_color);
+	if (!m_strCaption.IsEmpty())
+		SetWindowText(m_strCaption);
 	if (m_nCurveType == 2) {
 		if (m_strExprPolar.IsEmpty()) m_strExprPolar = L"1 - cos(k)";
-		if (m_dPhiFrom == 0.0 && m_dPhiTo == 0.0) { m_dPhiFrom = 0.0; m_dPhiTo = 6.283185307179586; }
 	}
 	if (m_nCurveType == 3) {
 		if (m_strExprImplicit.IsEmpty()) m_strExprImplicit = L"pow(abs(x),2.0/3)+pow(abs(y),2.0/3)-1";
-		if (m_dXFromImp == -2.0 && m_dXToImp == 2.0 && m_dYFromImp == -2.0 && m_dYToImp == 2.0) {
-			m_dXFromImp = -2.0; m_dXToImp = 2.0; m_dYFromImp = -2.0; m_dYToImp = 2.0;
-		}
 	}
 	UpdateData(FALSE);
 	UpdateControlVisibility();
@@ -176,7 +200,7 @@ void CAddCurveDialog::OnOK()
 	if (m_color == CLR_DEFAULT || m_color == CLR_NONE)
 		m_color = RGB(255, 255, 0);
 
-	// Validate inputs.
+	// Validate inputs and parse range expressions (pi, e, arithmetic allowed).
 	if (m_nCurveType == 0)
 	{
 		if (m_strExprYFX.IsEmpty())
@@ -184,11 +208,26 @@ void CAddCurveDialog::OnOK()
 			AfxMessageBox(L"Please enter a y = f(x) expression.", MB_ICONWARNING);
 			return;
 		}
-		if (m_dXFrom >= m_dXTo)
+		double dXFrom = 0.0, dXTo = 0.0;
+		if (!ParseRangeExpr(m_strXFrom, dXFrom))
+		{
+			AfxMessageBox(L"Invalid x start value. Use a number or an expression like '-pi'.", MB_ICONWARNING);
+			return;
+		}
+		if (!ParseRangeExpr(m_strXTo, dXTo))
+		{
+			AfxMessageBox(L"Invalid x end value. Use a number or an expression like 'pi'.", MB_ICONWARNING);
+			return;
+		}
+		if (dXFrom >= dXTo)
 		{
 			AfxMessageBox(L"x start must be less than x end.", MB_ICONWARNING);
 			return;
 		}
+		m_result.type     = UCT_YFX;
+		m_result.strExprY = m_strExprYFX;
+		m_result.xStart   = dXFrom;
+		m_result.xEnd     = dXTo;
 	}
 	else if (m_nCurveType == 1)
 	{
@@ -197,11 +236,27 @@ void CAddCurveDialog::OnOK()
 			AfxMessageBox(L"Please enter both x(t) and y(t) expressions.", MB_ICONWARNING);
 			return;
 		}
-		if (m_dTFrom >= m_dTTo)
+		double dTFrom = 0.0, dTTo = 0.0;
+		if (!ParseRangeExpr(m_strTFrom, dTFrom))
+		{
+			AfxMessageBox(L"Invalid t start value.", MB_ICONWARNING);
+			return;
+		}
+		if (!ParseRangeExpr(m_strTTo, dTTo))
+		{
+			AfxMessageBox(L"Invalid t end value. Use a number or an expression like '2*pi'.", MB_ICONWARNING);
+			return;
+		}
+		if (dTFrom >= dTTo)
 		{
 			AfxMessageBox(L"t start must be less than t end.", MB_ICONWARNING);
 			return;
 		}
+		m_result.type        = UCT_PARAMETRIC;
+		m_result.strExprX    = m_strExprParX;
+		m_result.strExprYPar = m_strExprParY;
+		m_result.tStart      = dTFrom;
+		m_result.tEnd        = dTTo;
 	}
 	else if (m_nCurveType == 2)
 	{
@@ -210,11 +265,26 @@ void CAddCurveDialog::OnOK()
 			AfxMessageBox(L"Please enter a polar expression r = f(k).", MB_ICONWARNING);
 			return;
 		}
-		if (m_dPhiFrom >= m_dPhiTo)
+		double dPhiFrom = 0.0, dPhiTo = 0.0;
+		if (!ParseRangeExpr(m_strPhiFrom, dPhiFrom))
+		{
+			AfxMessageBox(L"Invalid k start value.", MB_ICONWARNING);
+			return;
+		}
+		if (!ParseRangeExpr(m_strPhiTo, dPhiTo))
+		{
+			AfxMessageBox(L"Invalid k end value. Use a number or an expression like '2*pi'.", MB_ICONWARNING);
+			return;
+		}
+		if (dPhiFrom >= dPhiTo)
 		{
 			AfxMessageBox(L"k start must be less than k end.", MB_ICONWARNING);
 			return;
 		}
+		m_result.type         = UCT_POLAR;
+		m_result.strExprPolar = m_strExprPolar;
+		m_result.phiStart     = dPhiFrom;
+		m_result.phiEnd       = dPhiTo;
 	}
 	else if (m_nCurveType == 3)
 	{
@@ -223,49 +293,64 @@ void CAddCurveDialog::OnOK()
 			AfxMessageBox(L"Please enter an implicit expression f(x, y) = 0.", MB_ICONWARNING);
 			return;
 		}
-		if (m_dXFromImp >= m_dXToImp || m_dYFromImp >= m_dYToImp)
+		double dXFromImp = 0.0, dXToImp = 0.0, dYFromImp = 0.0, dYToImp = 0.0;
+		if (!ParseRangeExpr(m_strXFromImp, dXFromImp) || !ParseRangeExpr(m_strXToImp, dXToImp) ||
+		    !ParseRangeExpr(m_strYFromImp, dYFromImp) || !ParseRangeExpr(m_strYToImp, dYToImp))
+		{
+			AfxMessageBox(L"Invalid implicit range value.", MB_ICONWARNING);
+			return;
+		}
+		if (dXFromImp >= dXToImp || dYFromImp >= dYToImp)
 		{
 			AfxMessageBox(L"x/y start must be less than x/y end.", MB_ICONWARNING);
 			return;
 		}
+		m_result.type            = UCT_IMPLICIT;
+		m_result.strExprImplicit = m_strExprImplicit;
+		m_result.xStartImp       = dXFromImp;
+		m_result.xEndImp         = dXToImp;
+		m_result.yStartImp       = dYFromImp;
+		m_result.yEndImp         = dYToImp;
 	}
 
-	// Build result curve.
+	// Common fields.
 	m_result.bVisible = TRUE;
 	m_result.color    = m_color;
 	m_result.label    = m_strLabel.IsEmpty() ? L"Curve" : m_strLabel;
 
-	if (m_nCurveType == 0)
-	{
-		m_result.type     = UCT_YFX;
-		m_result.strExprY = m_strExprYFX;
-		m_result.xStart   = m_dXFrom;
-		m_result.xEnd     = m_dXTo;
-	}
-	else if (m_nCurveType == 1)
-	{
-		m_result.type       = UCT_PARAMETRIC;
-		m_result.strExprX   = m_strExprParX;
-		m_result.strExprYPar= m_strExprParY;
-		m_result.tStart     = m_dTFrom;
-		m_result.tEnd       = m_dTTo;
-	}
-	else if (m_nCurveType == 2)
-	{
-		m_result.type         = UCT_POLAR;
-		m_result.strExprPolar = m_strExprPolar;
-		m_result.phiStart     = m_dPhiFrom;
-		m_result.phiEnd       = m_dPhiTo;
-	}
-	else if (m_nCurveType == 3)
-	{
-		m_result.type = UCT_IMPLICIT;
-		m_result.strExprImplicit = m_strExprImplicit;
-		m_result.xStartImp = m_dXFromImp;
-		m_result.xEndImp = m_dXToImp;
-		m_result.yStartImp = m_dYFromImp;
-		m_result.yEndImp = m_dYToImp;
-	}
-
 	CDialog::OnOK();
+}
+
+// ---------------------------------------------------------------------------
+// PrePopulate — fill dialog fields from an existing UserCurve before DoModal.
+// ---------------------------------------------------------------------------
+void CAddCurveDialog::PrePopulate(const UserCurve& curve)
+{
+	m_nCurveType = (int)curve.type;
+	m_strLabel   = curve.label;
+	m_color      = curve.color;
+	m_strCaption = L"Edit Curve";
+
+	// y = f(x)
+	m_strExprYFX = curve.strExprY;
+	m_strXFrom.Format(L"%g", curve.xStart);
+	m_strXTo.Format(L"%g", curve.xEnd);
+
+	// Parametric
+	m_strExprParX = curve.strExprX;
+	m_strExprParY = curve.strExprYPar;
+	m_strTFrom.Format(L"%g", curve.tStart);
+	m_strTTo.Format(L"%g", curve.tEnd);
+
+	// Polar
+	m_strExprPolar = curve.strExprPolar;
+	m_strPhiFrom.Format(L"%g", curve.phiStart);
+	m_strPhiTo.Format(L"%g", curve.phiEnd);
+
+	// Implicit
+	m_strExprImplicit = curve.strExprImplicit;
+	m_strXFromImp.Format(L"%g", curve.xStartImp);
+	m_strXToImp.Format(L"%g", curve.xEndImp);
+	m_strYFromImp.Format(L"%g", curve.yStartImp);
+	m_strYToImp.Format(L"%g", curve.yEndImp);
 }
