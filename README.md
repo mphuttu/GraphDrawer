@@ -110,6 +110,31 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
 
 ## What's New in 2026-05 (latest)
 
+### Stability and correctness fixes
+
+- **Print Preview header no longer shows garbled characters.**  The header font
+  was previously sized in screen pixels but rendered in MM_LOMETRIC units, making
+  it illegibly small (≈ 1.6 mm tall on a 96 dpi display).  The font height is now
+  specified in proper MM_LOMETRIC logical units (≈ 4.2 mm ≈ 12 pt).  In addition,
+  the Y coordinate of the header and footer text was computed with the wrong sign
+  (MM_LOMETRIC Y grows upward, not downward), so both texts were drawn outside the
+  printable area.  Both offsets are now correct.
+- **Crash after prolonged use with multiple user-defined curves fixed.**  Every
+  repaint of the custom `y = f(x)` curve selected a GDI pen object into the DC
+  but never deselected it before the pen went out of scope.  `DeleteObject` fails
+  silently on a pen that is still selected, so one GDI handle leaked per repaint.
+  Windows limits a process to ≈ 10 000 GDI handles; after enough zoom/pan operations
+  the pool was exhausted and the application crashed.  The old pen is now saved and
+  restored before the `CPen` is destroyed.
+- **Worker-thread use-after-free fixed.**  The background expression-evaluation
+  thread was launched with `m_bAutoDelete = TRUE`, which lets MFC delete the
+  `CWinThread` object as soon as the thread exits.  If the thread finished before
+  `SetCustomExpression` or the document destructor called
+  `WaitForSingleObject(m_pDrawThread->m_hThread, …)`, the handle was read from
+  already-freed memory (undefined behaviour, potential crash).
+  `m_bAutoDelete` is now `FALSE`; the `CWinThread` object is explicitly `delete`d
+  after the wait completes.
+
 ### Expression parser fixes and improvements
 - **Negative exponents now work correctly**: `exp(-x^2)` is now evaluated as
   `exp(-(x^2))`, i.e. unary minus has lower precedence than `^`.

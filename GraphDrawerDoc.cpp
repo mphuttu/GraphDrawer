@@ -92,6 +92,7 @@ CGraphDrawerDoc::~CGraphDrawerDoc()
 	if (m_pDrawThread != NULL)
 	{
 		WaitForSingleObject(m_pDrawThread->m_hThread, 3000);
+		delete m_pDrawThread;   // safe: m_bAutoDelete = FALSE
 		m_pDrawThread = NULL;
 	}
 }
@@ -745,6 +746,7 @@ void CGraphDrawerDoc::SetCustomExpression(const CString& expr, BOOL bDraw,
 	if (m_pDrawThread != NULL)
 	{
 		WaitForSingleObject(m_pDrawThread->m_hThread, 2000);
+		delete m_pDrawThread;   // safe: m_bAutoDelete = FALSE
 		m_pDrawThread = NULL;
 	}
 	m_bCancelDraw = FALSE;
@@ -797,7 +799,9 @@ void CGraphDrawerDoc::SetCustomExpression(const CString& expr, BOOL bDraw,
 		THREAD_PRIORITY_BELOW_NORMAL, 0, CREATE_SUSPENDED);
 	if (m_pDrawThread)
 	{
-		m_pDrawThread->m_bAutoDelete = TRUE;
+		// Keep m_bAutoDelete = FALSE so we own the CWinThread object and can
+		// safely call WaitForSingleObject + delete without a use-after-free.
+		m_pDrawThread->m_bAutoDelete = FALSE;
 		m_pDrawThread->ResumeThread();
 	}
 	else

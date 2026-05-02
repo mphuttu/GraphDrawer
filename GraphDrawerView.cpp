@@ -394,9 +394,14 @@ void CGraphDrawerView::OnDraw(CDC* pDC)
 	if ( pDoc->m_bDrawCustomFunction == TRUE )
 	{
 		CPen customPen;
+		CPen* pOldCustomPen = nullptr;
 		if ( customPen.CreatePen(PS_SOLID, 1, RGB(255, 200, 0)) )
-			pDC->SelectObject(&customPen);
+			pOldCustomPen = pDC->SelectObject(&customPen);
 		DrawCustomFunction(pDC, ct, RGB(255, 200, 0), pDoc);
+		// Deselect before customPen goes out of scope; otherwise DeleteObject fails
+		// and the GDI handle leaks, eventually exhausting the GDI handle pool.
+		if (pOldCustomPen)
+			pDC->SelectObject(pOldCustomPen);
 	}
 
 	// Draw user-defined curves
@@ -436,8 +441,8 @@ void CGraphDrawerView::OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo)
 	LOGFONT lf; // logical font structure
 	::ZeroMemory( &lf, sizeof(lf) );
 
-	// .. 12 point Times Bold
-	lf.lfHeight = -MulDiv( 12, pDC->GetDeviceCaps(LOGPIXELSX), 72 );
+	// 12 pt in MM_LOMETRIC logical units (0.1 mm each): 12 * 25.4 mm / 72 pt * 10 = 42.3
+	lf.lfHeight = -MulDiv(12, 254, 72);  // ≈ -42 units = 12pt in MM_LOMETRIC
 	lf.lfWidth = 0;
 	lf.lfEscapement = 0;
 	lf.lfOrientation = 0;
@@ -445,11 +450,12 @@ void CGraphDrawerView::OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo)
 	lf.lfItalic = FALSE;
 	lf.lfUnderline = FALSE;
 	lf.lfStrikeOut = FALSE;
-	lf.lfCharSet = DEFAULT_CHARSET;
-	lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
+	lf.lfCharSet = ANSI_CHARSET;
+	lf.lfOutPrecision = OUT_TT_PRECIS;
 	lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-	lf.lfQuality = DEFAULT_QUALITY;
-	lf.lfPitchAndFamily = VARIABLE_PITCH | FF_ROMAN;
+	lf.lfQuality = PROOF_QUALITY;
+	lf.lfPitchAndFamily = VARIABLE_PITCH | FF_SWISS;
+	wcscpy_s(lf.lfFaceName, LF_FACESIZE, L"Arial");
 
 	// ... Create printing font
 	m_PrintFont.CreateFontIndirectW(&lf);
@@ -567,11 +573,13 @@ void CGraphDrawerView::PrintPageHeader(CDC* pDC, CPrintInfo* pInfo, CRect rcPrin
 	pDC->DPtoLP(&rcPage);
 
 	CString strHeader = _T("Graph: ");
-	strHeader += GetDocument()->GetPathName();
+	const CString path = GetDocument()->GetPathName();
+	strHeader += path.IsEmpty() ? _T("(unsaved)") : path;
 
 	CFont* pOldFont = pDC->SelectObject(&m_PrintFont);
 	pDC->SetTextAlign(TA_LEFT);
-	pDC->TextOutW(rcPage.left, rcPage.top + TOP_MARGIN, strHeader);
+	// In MM_LOMETRIC Y increases upward, so subtract margin to move DOWN from top.
+	pDC->TextOutW(rcPage.left, rcPage.top - TOP_MARGIN, strHeader);
 	pDC->SelectObject(pOldFont);
 }
 
@@ -588,9 +596,11 @@ void CGraphDrawerView::PrintPageFooter(CDC* pDC, CPrintInfo* pInfo, CRect rcPrin
 
 	CSize sizeFooter = pDC->GetTextExtent(strFooter);
 
-	// Draw a separator line just above the footer text.
-	int nLineY    = rcPage.bottom - BOTTOM_MARGIN;
-	int nTextY    = nLineY - sizeFooter.cy;
+	// In MM_LOMETRIC Y increases upward: bottom is the most-negative Y value.
+	// Add BOTTOM_MARGIN to move UP (toward centre of page) from the bottom edge.
+	int nLineY    = rcPage.bottom + BOTTOM_MARGIN;
+	// Text sits above the line: add height (positive = upward in MM_LOMETRIC).
+	int nTextY    = nLineY + sizeFooter.cy;
 
 	pDC->MoveTo(rcPage.left,  nLineY);
 	pDC->LineTo(rcPage.right, nLineY);
