@@ -18,14 +18,15 @@
 
 <h2>Main Window</h2>
 <p>The main window displays the Cartesian coordinate system and all enabled function
-graphs.  It supports scrolling (scroll bars) and print preview.</p>
+graphs.  The visible range, zoom level, and pan position are all controlled interactively
+with the mouse (see <a href="keyboard.htm">Mouse Controls</a>).</p>
 
 <h2>Menu Bar</h2>
 <table>
   <tr><th>Menu</th><th>Item</th><th>Description</th></tr>
   <tr><td>File</td><td>New / Open / Save / Save As</td><td>Document file operations (*.gra)</td></tr>
-  <tr><td>File</td><td>Print / Print Preview / Print Setup</td><td>Printing support</td></tr>
-  <tr><td>Draw</td><td>Draw Options…</td><td>Opens the Draw Options dialog</td></tr>
+  <tr><td>File</td><td>Print / Print Preview / Print Setup</td><td>Printing support — output matches the screen view</td></tr>
+  <tr><td>Draw</td><td>Draw Options…</td><td>Opens the Draw Options dialog (axis style, range, colours)</td></tr>
   <tr><td>View</td><td>Toolbar / Status Bar</td><td>Toggle toolbar and status bar visibility</td></tr>
   <tr><td>View</td><td>Draw Functions</td><td>Show/hide the Draw Functions palette</td></tr>
   <tr><td>Help</td><td>About GraphDrawer…</td><td>Version information</td></tr>
@@ -36,20 +37,34 @@ graphs.  It supports scrolling (scroll bars) and print preview.</p>
 Paste, Print and About.</p>
 
 <h2>Status Bar</h2>
-<p>The status bar shows the current coordinate axis size (half-widths in logical
-units) on the right side.</p>
+<p>The status bar shows the current document information on the right side.</p>
 
 <h2>Draw Functions Palette</h2>
 <p>A floating, always-visible panel containing:</p>
 <ul>
-  <li>A text field for the custom expression (<strong>y =</strong>).</li>
+  <li>A text field for the custom expression (<strong>y =</strong>) and its x-range.</li>
   <li>A <strong>Draw Custom Function</strong> checkbox to enable plotting of the expression.</li>
   <li>Individual checkboxes for 14 built-in functions.</li>
-  <li><strong>OK</strong> — applies all current checkbox settings and starts drawing.</li>
+  <li>A <strong>User-Defined Curves</strong> group with:
+    <ul>
+      <li>A checkbox list of all user-added curves — uncheck to hide, check to show.</li>
+      <li><strong>Add…</strong> — opens the Add Curve dialog to add a new y&nbsp;=&nbsp;f(x) or
+          parametric curve.</li>
+      <li><strong>Remove</strong> — deletes the selected curve from the list.</li>
+    </ul>
+  </li>
+  <li><strong>OK</strong> — applies all current settings.</li>
   <li><strong>Cancel</strong> — hides the palette (use <strong>View › Draw Functions</strong> to reopen).</li>
 </ul>
 
-<p>Checking or unchecking any individual function checkbox immediately updates the
-graph without needing to press OK.</p>
+<h2>Add Curve Dialog</h2>
+<p>Opened via the <strong>Add…</strong> button.  Allows you to define a new curve:</p>
+<ul>
+  <li><strong>y = f(x)</strong> — enter an expression in <code>x</code> and optionally restrict
+      the x-range.</li>
+  <li><strong>Parametric</strong> — enter separate <code>x(t)</code> and <code>y(t)</code>
+      expressions and the t-range.</li>
+  <li>Choose a <strong>label</strong> and a <strong>colour</strong> for the curve.</li>
+</ul>
 </body>
 </html>

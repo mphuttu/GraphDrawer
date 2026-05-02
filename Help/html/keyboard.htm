@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GraphDrawer – Keyboard Shortcuts</title>
+<title>GraphDrawer – Keyboard Shortcuts &amp; Mouse Controls</title>
 <style>
   body { font-family: Segoe UI, Arial, sans-serif; margin: 20px 30px; color: #222; }
   h1   { color: #1a5fa8; border-bottom: 2px solid #1a5fa8; padding-bottom: 6px; }
@@ -15,7 +15,7 @@
 </style>
 </head>
 <body>
-<h1>Keyboard Shortcuts</h1>
+<h1>Keyboard Shortcuts &amp; Mouse Controls</h1>
 
 <h2>File Operations</h2>
 <table>
@@ -41,5 +41,18 @@
   <tr><td><kbd>F6</kbd></td><td>Next pane</td></tr>
   <tr><td><kbd>Shift+F6</kbd></td><td>Previous pane</td></tr>
 </table>
+
+<h2>Mouse Controls (Coordinate View)</h2>
+<table style="width:80%">
+  <tr><th>Action</th><th>Effect</th></tr>
+  <tr><td>Scroll wheel up</td><td>Zoom in — range shrinks by factor 0.8, centred on the viewport</td></tr>
+  <tr><td>Scroll wheel down</td><td>Zoom out — range grows by factor 1.25</td></tr>
+  <tr><td>Left-button drag</td><td>Pan — drags the coordinate system in the direction of movement</td></tr>
+  <tr><td>Right-click</td><td>Reset view — restores the range defined in Draw Options</td></tr>
+</table>
+
+<p>To set a specific range, use <strong>Draw › Draw Options…</strong> and enter the
+desired X min / X max / Y min / Y max values.  After pressing <strong>OK</strong>
+the view resets to that range.</p>
 </body>
 </html>
