@@ -116,7 +116,7 @@ BOOL CGraphDrawerDoc::OnNewDocument()
 
 // File format version — bump when adding new fields (use the loading 'version'
 // guard below so old files continue to load with sensible defaults).
-static const DWORD GD_FILE_VERSION = 1;
+static const DWORD GD_FILE_VERSION = 2;
 
 void CGraphDrawerDoc::Serialize(CArchive& ar)
 {
@@ -203,6 +203,47 @@ void CGraphDrawerDoc::Serialize(CArchive& ar)
 				ar << c.xEndImp;
 				ar << c.yStartImp;
 				ar << c.yEndImp;
+			}
+		}
+
+		// --- Geometric objects (version 2+) ---
+		{
+			CSingleLock lock(&m_csGeoObjects, TRUE);
+			DWORD nGeo = (DWORD)m_vecGeoObjects.size();
+			ar << nGeo;
+			for (const GeoObject& obj : m_vecGeoObjects)
+			{
+				ar << (int)obj.type;
+				if (obj.type == GOT_LINE_SEGMENT)
+				{
+					const GeoLineSegment& ln = obj.line;
+					ar << ln.x1 << ln.y1 << ln.x2 << ln.y2;
+					ar << ln.label;
+					ar << (DWORD)ln.color;
+					ar << ln.bVisible;
+					ar << ln.bParallel;
+					ar << ln.dParallelOffset;
+					ar << ln.bTransversal;
+					ar << ln.dTransversalX << ln.dTransversalY;
+					ar << ln.dTransversalAngleDeg;
+				}
+				else
+				{
+					const GeoTriangle& tri = obj.triangle;
+					ar << tri.ax << tri.ay << tri.bx << tri.by << tri.cx << tri.cy;
+					ar << tri.labelA << tri.labelB << tri.labelC;
+					ar << tri.labelSideA << tri.labelSideB << tri.labelSideC;
+					ar << tri.labelAngleA << tri.labelAngleB << tri.labelAngleC;
+					ar << tri.bShowVertexLabels << tri.bShowSideLabels;
+					ar << tri.bShowAngleLabels << tri.bShowAngleValues;
+					ar << tri.bCircumcircle << tri.bIncircle;
+					ar << tri.bPerpBisectors << tri.bAngleBisectors;
+					ar << tri.bAltitudes << tri.bMedians;
+					ar << (int)tri.type;
+					ar << tri.label;
+					ar << (DWORD)tri.color;
+					ar << tri.bVisible;
+				}
 			}
 		}
 	}
@@ -311,6 +352,52 @@ void CGraphDrawerDoc::Serialize(CArchive& ar)
 		if (m_bDrawCustomFunction && !m_strCustomExpression.IsEmpty())
 			SetCustomExpression(m_strCustomExpression, m_bDrawCustomFunction,
 			                    m_dCustomRangeStart, m_dCustomRangeEnd);
+
+		// --- Geometric objects (version 2+) ---
+		if (version >= 2)
+		{
+			DWORD nGeo = 0;
+			ar >> nGeo;
+			CSingleLock lock(&m_csGeoObjects, TRUE);
+			m_vecGeoObjects.clear();
+			m_vecGeoObjects.reserve(nGeo);
+			for (DWORD i = 0; i < nGeo; ++i)
+			{
+				GeoObject obj;
+				int iType; ar >> iType; obj.type = (GeoObjectType)iType;
+				if (obj.type == GOT_LINE_SEGMENT)
+				{
+					GeoLineSegment& ln = obj.line;
+					ar >> ln.x1 >> ln.y1 >> ln.x2 >> ln.y2;
+					ar >> ln.label;
+					ar >> dw; ln.color = (COLORREF)dw;
+					ar >> ln.bVisible;
+					ar >> ln.bParallel;
+					ar >> ln.dParallelOffset;
+					ar >> ln.bTransversal;
+					ar >> ln.dTransversalX >> ln.dTransversalY;
+					ar >> ln.dTransversalAngleDeg;
+				}
+				else
+				{
+					GeoTriangle& tri = obj.triangle;
+					ar >> tri.ax >> tri.ay >> tri.bx >> tri.by >> tri.cx >> tri.cy;
+					ar >> tri.labelA >> tri.labelB >> tri.labelC;
+					ar >> tri.labelSideA >> tri.labelSideB >> tri.labelSideC;
+					ar >> tri.labelAngleA >> tri.labelAngleB >> tri.labelAngleC;
+					ar >> tri.bShowVertexLabels >> tri.bShowSideLabels;
+					ar >> tri.bShowAngleLabels >> tri.bShowAngleValues;
+					ar >> tri.bCircumcircle >> tri.bIncircle;
+					ar >> tri.bPerpBisectors >> tri.bAngleBisectors;
+					ar >> tri.bAltitudes >> tri.bMedians;
+					int iTri; ar >> iTri; tri.type = (TriangleType)iTri;
+					ar >> tri.label;
+					ar >> dw; tri.color = (COLORREF)dw;
+					ar >> tri.bVisible;
+				}
+				m_vecGeoObjects.push_back(std::move(obj));
+			}
+		}
 	}
 }
 
