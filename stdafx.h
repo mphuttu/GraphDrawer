@@ -9,6 +9,9 @@
 #define VC_EXTRALEAN            // Exclude rarely-used stuff from Windows headers
 #endif
 
+#define _USE_MATH_DEFINES       // Enable M_PI and other math constants in <cmath>/<math.h>
+#define NOMINMAX                    // Suppress Win32 min/max macros that conflict with std::min/std::max
+
 #include "targetver.h"
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // some CString constructors will be explicit

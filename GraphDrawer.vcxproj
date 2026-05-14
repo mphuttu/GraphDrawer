@@ -195,6 +195,10 @@
   <ItemGroup>
     <ClInclude Include="AddCurveDialog.h" />
     <ClInclude Include="DrawFunctionsDialog.h" />
+    <ClInclude Include="DrawGeometricFiguresDialog.h" />
+    <ClInclude Include="GeometricObjects.h" />
+    <ClInclude Include="LineSegmentDialog.h" />
+    <ClInclude Include="TriangleDialog.h" />
     <ClInclude Include="DrawOptionsDialog.h" />
     <ClInclude Include="GraphDrawer.h" />
     <ClInclude Include="GraphDrawerDoc.h" />
@@ -207,6 +211,9 @@
   <ItemGroup>
     <ClCompile Include="AddCurveDialog.cpp" />
     <ClCompile Include="DrawFunctionsDialog.cpp" />
+    <ClCompile Include="DrawGeometricFiguresDialog.cpp" />
+    <ClCompile Include="LineSegmentDialog.cpp" />
+    <ClCompile Include="TriangleDialog.cpp" />
     <ClCompile Include="ExpressionParser.cpp" />
     <ClCompile Include="DrawOptionsDialog.cpp" />
     <ClCompile Include="GraphDrawer.cpp" />

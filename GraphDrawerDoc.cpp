@@ -19,6 +19,7 @@
 #include <utility>
 #include <functional>
 #include <limits>
+#include <algorithm>
 
 namespace
 {
@@ -906,7 +907,503 @@ void DrawUserCurves(CDC* pDC, const CoordTransform& ct,
 }
 
 // ---------------------------------------------------------------------------
-// Helper: sample a function over [xMin, xMax] using the expression parser.
+// DrawGeometricObjects — draw all geometric figures stored in the document
+// ---------------------------------------------------------------------------
+
+// Forward declarations of helper drawing functions
+static void DrawGeoLineSegment(CDC* pDC, const CoordTransform& ct, const GeoLineSegment& seg);
+static void DrawGeoTriangle(CDC* pDC, const CoordTransform& ct, const GeoTriangle& tri);
+
+void DrawGeometricObjects(CDC* pDC, const CoordTransform& ct, CGraphDrawerDoc* pDoc)
+{
+	CSingleLock lock(&pDoc->m_csGeoObjects, TRUE);
+	for (const auto& obj : pDoc->m_vecGeoObjects)
+	{
+		if (!obj.IsVisible()) continue;
+		if (obj.type == GOT_LINE_SEGMENT)
+			DrawGeoLineSegment(pDC, ct, obj.line);
+		else
+			DrawGeoTriangle(pDC, ct, obj.triangle);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Helper: draw a text label at math coordinate, with slight offset in pixels
+// ---------------------------------------------------------------------------
+static void DrawLabel(CDC* pDC, const CoordTransform& ct,
+                      double mathX, double mathY,
+                      const CString& text,
+                      int offX = 4, int offY = -14)
+{
+	if (text.IsEmpty()) return;
+	CPoint p = ct.ToLogical(mathX, mathY);
+	UINT oldAlign = pDC->SetTextAlign(TA_LEFT | TA_TOP);
+	int oldBk = pDC->SetBkMode(TRANSPARENT);
+	pDC->TextOut(p.x + offX, p.y + offY, text);
+	pDC->SetTextAlign(oldAlign);
+	pDC->SetBkMode(oldBk);
+}
+
+// ---------------------------------------------------------------------------
+// DrawGeoLineSegment
+// ---------------------------------------------------------------------------
+static void DrawGeoLineSegment(CDC* pDC, const CoordTransform& ct, const GeoLineSegment& seg)
+{
+	CPen pen(PS_SOLID, 2, seg.color);
+	CPen* pOld = pDC->SelectObject(&pen);
+
+	CPoint p1 = ct.ToLogical(seg.x1, seg.y1);
+	CPoint p2 = ct.ToLogical(seg.x2, seg.y2);
+	pDC->MoveTo(p1);
+	pDC->LineTo(p2);
+
+	// Draw small circles at endpoints
+	pDC->Ellipse(p1.x - 3, p1.y - 3, p1.x + 3, p1.y + 3);
+	pDC->Ellipse(p2.x - 3, p2.y - 3, p2.x + 3, p2.y + 3);
+
+	// Draw label near midpoint
+	if (!seg.label.IsEmpty())
+	{
+		double mx = (seg.x1 + seg.x2) * 0.5;
+		double my = (seg.y1 + seg.y2) * 0.5;
+		DrawLabel(pDC, ct, mx, my, seg.label, 4, -14);
+	}
+
+	double dx = seg.x2 - seg.x1;
+	double dy = seg.y2 - seg.y1;
+	double len = std::sqrt(dx*dx + dy*dy);
+
+	// Parallel line
+	if (seg.bParallel && len > 1e-10)
+	{
+		double nx = -dy / len;
+		double ny =  dx / len;
+		double off = seg.dParallelOffset;
+
+		CPen parPen(PS_DASH, 1, seg.color);
+		pDC->SelectObject(&parPen);
+
+		CPoint p3 = ct.ToLogical(seg.x1 + nx*off, seg.y1 + ny*off);
+		CPoint p4 = ct.ToLogical(seg.x2 + nx*off, seg.y2 + ny*off);
+		pDC->MoveTo(p3);
+		pDC->LineTo(p4);
+		pDC->SelectObject(&pen);  // restore solid pen
+	}
+
+	// Transversal line
+	if (seg.bTransversal)
+	{
+		double angRad = seg.dTransversalAngleDeg * M_PI / 180.0;
+		double cosA = std::cos(angRad), sinA = std::sin(angRad);
+		double extent = (len > 1.0 ? len : 1.0) * 3.0
+		              + (seg.bParallel ? std::abs(seg.dParallelOffset) : 0.0)
+		              + 2.0;
+
+		double tx = seg.dTransversalX;
+		double ty = seg.dTransversalY;
+
+		double t1x = tx - cosA * extent, t1y = ty - sinA * extent;
+		double t2x = tx + cosA * extent, t2y = ty + sinA * extent;
+
+		CPen transPen(PS_DOT, 1, seg.color);
+		pDC->SelectObject(&transPen);
+		CPoint pt1 = ct.ToLogical(t1x, t1y);
+		CPoint pt2 = ct.ToLogical(t2x, t2y);
+		pDC->MoveTo(pt1);
+		pDC->LineTo(pt2);
+
+		// --- Compute intersection with the main line and draw angle label ---
+		// Line 1: P1 + s*(P2-P1),  Line 2: T + t*(dir)
+		// P1=(x1,y1), dir1=(dx,dy), T=(tx,ty), dir2=(cosA,sinA)
+		// Solve: x1 + s*dx = tx + t*cosA
+		//        y1 + s*dy = ty + t*sinA
+		double denom = dx * sinA - dy * cosA;
+		if (std::abs(denom) > 1e-10)
+		{
+			double s = ((tx - seg.x1)*sinA - (ty - seg.y1)*cosA) / denom;
+			double ix = seg.x1 + s*dx;
+			double iy = seg.y1 + s*dy;
+
+			// Angle between main line and transversal
+			double dot = dx/len * cosA + dy/len * sinA;
+			dot = std::max(-1.0, std::min(1.0, dot));
+			double angleDeg = std::acos(std::abs(dot)) * 180.0 / M_PI;
+			double suppDeg  = 180.0 - angleDeg;
+
+			CString strAngle1, strAngle2;
+			strAngle1.Format(_T("%.0f\u00B0"), angleDeg);
+			strAngle2.Format(_T("%.0f\u00B0"), suppDeg);
+
+			// Draw both angle labels near intersection
+			pDC->SelectObject(&pen);
+			CPoint pi = ct.ToLogical(ix, iy);
+			int oldBk = pDC->SetBkMode(TRANSPARENT);
+			pDC->TextOut(pi.x + 5,  pi.y - 16, strAngle1);
+			pDC->TextOut(pi.x - 35, pi.y - 16, strAngle2);
+			pDC->SetBkMode(oldBk);
+
+			// If parallel line exists, draw intersection there too
+			if (seg.bParallel && len > 1e-10)
+			{
+				double nx = -dy / len, ny = dx / len;
+				double off = seg.dParallelOffset;
+				// Parallel line: P1+nx*off + s*(dx,dy)
+				double px1 = seg.x1 + nx*off, py1 = seg.y1 + ny*off;
+				double denom2 = dx * sinA - dy * cosA;
+				if (std::abs(denom2) > 1e-10)
+				{
+					double s2 = ((tx - px1)*sinA - (ty - py1)*cosA) / denom2;
+					double ix2 = px1 + s2*dx;
+					double iy2 = py1 + s2*dy;
+					CPoint pi2 = ct.ToLogical(ix2, iy2);
+					pDC->TextOut(pi2.x + 5,  pi2.y - 16, strAngle1);
+					pDC->TextOut(pi2.x - 35, pi2.y - 16, strAngle2);
+				}
+			}
+		}
+	}
+
+	pDC->SelectObject(pOld);
+}
+
+// ---------------------------------------------------------------------------
+// DrawGeoTriangle — triangle with labels, angle arcs, and optional circles
+// ---------------------------------------------------------------------------
+static void DrawAngleArc(CDC* pDC, const CoordTransform& ct,
+                         double vx, double vy,          // vertex in math coords
+                         double d1x, double d1y,        // direction toward first adjacent vertex
+                         double d2x, double d2y,        // direction toward second adjacent vertex
+                         double radiusMath,             // arc radius in math units
+                         bool bYDown)                   // true=screen (Y down), false=print (Y up)
+{
+	// Compute arc start/end angles in screen-coordinate space
+	double len1 = std::sqrt(d1x*d1x + d1y*d1y);
+	double len2 = std::sqrt(d2x*d2x + d2y*d2y);
+	if (len1 < 1e-10 || len2 < 1e-10) return;
+	d1x /= len1; d1y /= len1;
+	d2x /= len2; d2y /= len2;
+
+	CPoint pV = ct.ToLogical(vx, vy);
+	CPoint pE1 = ct.ToLogical(vx + d1x * radiusMath, vy + d1y * radiusMath);
+	CPoint pE2 = ct.ToLogical(vx + d2x * radiusMath, vy + d2y * radiusMath);
+
+	// Compute bounding box of the arc circle in screen pixels
+	// The radius in pixels: use the scale of the transform
+	double scX = ct.ScaleX();
+	double scY = ct.ScaleY();
+	int rPx = (int)(radiusMath * (scX + scY) * 0.5);
+	if (rPx < 3) return;
+
+	// Choose arc direction so it sweeps through the interior of the angle.
+	// cross = d1 × d2 in math (Y-up) coords.
+	// CDC::Arc draws CCW in logical coordinates.
+	//   bYDown (MM_TEXT, Y-down): CCW logical = CW visually.
+	//     Arc(pE1,pE2) sweeps CW visually; this is the interior arc when cross > 0.
+	//     When cross < 0, swap endpoints so we still get the interior arc.
+	//   !bYDown (MM_LOMETRIC, Y-up): CCW logical = CCW visually.
+	//     Arc(pE2,pE1) sweeps CW visually; interior arc when cross > 0.
+	//     When cross < 0, swap back to Arc(pE1,pE2) for the interior arc.
+	double cross = d1x * d2y - d1y * d2x;
+	if (std::abs(cross) < 1e-10) return;  // degenerate: directions are (anti-)parallel
+
+	CRect rcArc(pV.x - rPx, pV.y - rPx, pV.x + rPx, pV.y + rPx);
+	bool doSwap = bYDown ? (cross < 0) : (cross > 0);
+	if (doSwap)
+		pDC->Arc(rcArc, pE2, pE1);
+	else
+		pDC->Arc(rcArc, pE1, pE2);
+}
+
+static void DrawGeoTriangle(CDC* pDC, const CoordTransform& ct, const GeoTriangle& tri)
+{
+	// --- Draw the three sides ---
+	CPen pen(PS_SOLID, 2, tri.color);
+	CPen* pOld = pDC->SelectObject(&pen);
+
+	CPoint pA = ct.ToLogical(tri.ax, tri.ay);
+	CPoint pB = ct.ToLogical(tri.bx, tri.by);
+	CPoint pC = ct.ToLogical(tri.cx, tri.cy);
+
+	pDC->MoveTo(pA); pDC->LineTo(pB);
+	pDC->MoveTo(pB); pDC->LineTo(pC);
+	pDC->MoveTo(pC); pDC->LineTo(pA);
+
+	// Small circles at vertices
+	for (const auto& p : {pA, pB, pC})
+		pDC->Ellipse(p.x-3, p.y-3, p.x+3, p.y+3);
+
+	int oldBk = pDC->SetBkMode(TRANSPARENT);
+
+	// --- Vertex labels ---
+	if (tri.bShowVertexLabels)
+	{
+		// Offset label away from opposite side
+		auto vertexOffset = [&](double vx, double vy, double ox, double oy) -> CSize {
+			// Compute outward direction from centroid
+			double cg_x = (tri.ax + tri.bx + tri.cx) / 3.0;
+			double cg_y = (tri.ay + tri.by + tri.cy) / 3.0;
+			double dirX = vx - cg_x, dirY = vy - cg_y;
+			double norm = std::sqrt(dirX*dirX + dirY*dirY);
+			if (norm < 1e-10) return CSize(4, -14);
+			dirX /= norm; dirY /= norm;
+			// In screen Y-down: flip Y
+			int ox2 = (int)(dirX * 16.0);
+			int oy2 = ct.bYDown ? (int)(dirY * 16.0) : (int)(-dirY * 16.0);
+			return CSize(ox2, oy2 - 8);
+		};
+		auto szA = vertexOffset(tri.ax, tri.ay, 0, 0);
+		auto szB = vertexOffset(tri.bx, tri.by, 0, 0);
+		auto szC = vertexOffset(tri.cx, tri.cy, 0, 0);
+		pDC->TextOut(pA.x + szA.cx, pA.y + szA.cy, tri.labelA);
+		pDC->TextOut(pB.x + szB.cx, pB.y + szB.cy, tri.labelB);
+		pDC->TextOut(pC.x + szC.cx, pC.y + szC.cy, tri.labelC);
+	}
+
+	// --- Side labels (midpoint of each side) ---
+	if (tri.bShowSideLabels)
+	{
+		// Side a = BC (opposite A)
+		double mx_a = (tri.bx + tri.cx) * 0.5, my_a = (tri.by + tri.cy) * 0.5;
+		// Side b = AC (opposite B)
+		double mx_b = (tri.ax + tri.cx) * 0.5, my_b = (tri.ay + tri.cy) * 0.5;
+		// Side c = AB (opposite C)
+		double mx_c = (tri.ax + tri.bx) * 0.5, my_c = (tri.ay + tri.by) * 0.5;
+
+		DrawLabel(pDC, ct, mx_a, my_a, tri.labelSideA, 4, -14);
+		DrawLabel(pDC, ct, mx_b, my_b, tri.labelSideB, 4, -14);
+		DrawLabel(pDC, ct, mx_c, my_c, tri.labelSideC, 4, -14);
+	}
+
+	// --- Angle labels and arcs ---
+	// Estimate a reasonable arc radius = 15% of the shortest side
+	double a = tri.SideA(), b = tri.SideB(), c = tri.SideC();
+	double minSide = std::min({a, b, c});
+	double arcR = minSide * 0.20;
+	if (arcR < 0.1) arcR = 0.1;
+
+	if (tri.bShowAngleLabels || tri.bShowAngleValues)
+	{
+		auto drawAngleLabel = [&](double vx, double vy,
+		                          double nb1x, double nb1y,
+		                          double nb2x, double nb2y,
+		                          const CString& lbl, double angleDeg)
+		{
+			// Draw arc
+			{
+				CPen thinPen(PS_SOLID, 1, tri.color);
+				pDC->SelectObject(&thinPen);
+				DrawAngleArc(pDC, ct, vx, vy,
+				             nb1x-vx, nb1y-vy, nb2x-vx, nb2y-vy,
+				             arcR, ct.bYDown);
+				pDC->SelectObject(&pen);
+			}
+
+			// Bisector direction for label placement
+			double d1x = nb1x-vx, d1y = nb1y-vy;
+			double d2x = nb2x-vx, d2y = nb2y-vy;
+			double len1 = std::sqrt(d1x*d1x + d1y*d1y);
+			double len2 = std::sqrt(d2x*d2x + d2y*d2y);
+			if (len1 < 1e-10 || len2 < 1e-10) return;
+			double bx_ = d1x/len1 + d2x/len2;
+			double by_ = d1y/len1 + d2y/len2;
+			double blen = std::sqrt(bx_*bx_ + by_*by_);
+			if (blen < 1e-10) return;
+			bx_ /= blen; by_ /= blen;
+
+			double labelX = vx + bx_ * arcR * 1.6;
+			double labelY = vy + by_ * arcR * 1.6;
+
+			CString text = lbl;
+			if (tri.bShowAngleValues)
+			{
+				CString val;
+				val.Format(_T("=%.0f\u00B0"), angleDeg);
+				text += val;
+			}
+			DrawLabel(pDC, ct, labelX, labelY, text, -6, -8);
+		};
+
+		drawAngleLabel(tri.ax, tri.ay, tri.bx, tri.by, tri.cx, tri.cy,
+		               tri.labelAngleA, tri.AngleAtA());
+		drawAngleLabel(tri.bx, tri.by, tri.ax, tri.ay, tri.cx, tri.cy,
+		               tri.labelAngleB, tri.AngleAtB());
+		drawAngleLabel(tri.cx, tri.cy, tri.ax, tri.ay, tri.bx, tri.by,
+		               tri.labelAngleC, tri.AngleAtC());
+	}
+
+	// --- Right angle mark at C if type is TT_RIGHT_C ---
+	if (tri.type == TT_RIGHT_C)
+	{
+		// Draw a small square at vertex C
+		double caX = tri.ax - tri.cx, caY = tri.ay - tri.cy;
+		double cbX = tri.bx - tri.cx, cbY = tri.by - tri.cy;
+		double lenCA = std::sqrt(caX*caX + caY*caY);
+		double lenCB = std::sqrt(cbX*cbX + cbY*cbY);
+		if (lenCA > 1e-10 && lenCB > 1e-10)
+		{
+			double sq = minSide * 0.07;
+			double uaX = caX/lenCA * sq, uaY = caY/lenCA * sq;
+			double ubX = cbX/lenCB * sq, ubY = cbY/lenCB * sq;
+			// Four corners of the right-angle square
+			CPoint sq1 = ct.ToLogical(tri.cx + uaX,           tri.cy + uaY);
+			CPoint sq2 = ct.ToLogical(tri.cx + uaX + ubX,     tri.cy + uaY + ubY);
+			CPoint sq3 = ct.ToLogical(tri.cx + ubX,           tri.cy + ubY);
+
+			CPen thinPen(PS_SOLID, 1, tri.color);
+			pDC->SelectObject(&thinPen);
+			pDC->MoveTo(sq1); pDC->LineTo(sq2); pDC->LineTo(sq3);
+			pDC->SelectObject(&pen);
+		}
+	}
+
+	// --- Circumcircle ---
+	if (tri.bCircumcircle)
+	{
+		double ox, oy, r;
+		tri.GetCircumcircle(ox, oy, r);
+		if (r > 1e-10)
+		{
+			CPen circPen(PS_DASH, 1, RGB(180, 100, 20));
+			pDC->SelectObject(&circPen);
+			CBrush* pOldBrush = (CBrush*)pDC->SelectStockObject(NULL_BRUSH);
+			CPoint pcen = ct.ToLogical(ox, oy);
+			double scX = ct.ScaleX(), scY = ct.ScaleY();
+			int rpx  = (int)(r * scX);
+			int rpxy = (int)(r * scY);
+			pDC->Ellipse(pcen.x - rpx, pcen.y - rpxy, pcen.x + rpx, pcen.y + rpxy);
+			pDC->SelectObject(pOldBrush);
+			pDC->SelectObject(&pen);
+		}
+	}
+
+	// --- Incircle ---
+	if (tri.bIncircle)
+	{
+		double ix, iy, r;
+		tri.GetIncircle(ix, iy, r);
+		if (r > 1e-10)
+		{
+			CPen incPen(PS_DOT, 1, RGB(20, 100, 200));
+			pDC->SelectObject(&incPen);
+			CBrush* pOldBrush = (CBrush*)pDC->SelectStockObject(NULL_BRUSH);
+			CPoint pcen = ct.ToLogical(ix, iy);
+			double scX = ct.ScaleX(), scY = ct.ScaleY();
+			int rpx  = (int)(r * scX);
+			int rpxy = (int)(r * scY);
+			pDC->Ellipse(pcen.x - rpx, pcen.y - rpxy, pcen.x + rpx, pcen.y + rpxy);
+			pDC->SelectObject(pOldBrush);
+			pDC->SelectObject(&pen);
+		}
+	}
+
+	// --- Perpendicular bisectors (keskinormaalit) ---
+	if (tri.bPerpBisectors)
+	{
+		CPen perpPen(PS_DASH, 1, RGB(140, 40, 200));
+		pDC->SelectObject(&perpPen);
+		double ext = std::max({a, b, c}) * 0.4;
+
+		auto drawPerpBisector = [&](double x1, double y1, double x2, double y2)
+		{
+			double mx = (x1 + x2) * 0.5, my = (y1 + y2) * 0.5;
+			double dx = x2 - x1, dy = y2 - y1;
+			double len = std::sqrt(dx*dx + dy*dy);
+			if (len < 1e-10) return;
+			double nx = -dy / len, ny = dx / len;
+			CPoint p1 = ct.ToLogical(mx + nx * ext, my + ny * ext);
+			CPoint p2 = ct.ToLogical(mx - nx * ext, my - ny * ext);
+			pDC->MoveTo(p1); pDC->LineTo(p2);
+		};
+		drawPerpBisector(tri.bx, tri.by, tri.cx, tri.cy);
+		drawPerpBisector(tri.ax, tri.ay, tri.cx, tri.cy);
+		drawPerpBisector(tri.ax, tri.ay, tri.bx, tri.by);
+		pDC->SelectObject(&pen);
+	}
+
+	// --- Angle bisectors (kulmien puolittajat) ---
+	if (tri.bAngleBisectors)
+	{
+		CPen bisPen(PS_DASH, 1, RGB(180, 110, 0));
+		pDC->SelectObject(&bisPen);
+		// Angle bisector theorem: bisector from vertex V divides opposite side
+		// in the ratio of the adjacent side lengths.
+		// From A: meets BC at D_a = b/(b+c)*B + c/(b+c)*C  (b=|AC|, c=|AB|)
+		// From B: meets AC at D_b = a/(a+c)*A + c/(a+c)*C  (a=|BC|, c=|AB|)
+		// From C: meets AB at D_c = a/(a+b)*A + b/(a+b)*B  (a=|BC|, b=|AC|)
+		double dax = (b * tri.bx + c * tri.cx) / (b + c);
+		double day = (b * tri.by + c * tri.cy) / (b + c);
+		double dbx = (a * tri.ax + c * tri.cx) / (a + c);
+		double dby = (a * tri.ay + c * tri.cy) / (a + c);
+		double dcx = (a * tri.ax + b * tri.bx) / (a + b);
+		double dcy = (a * tri.ay + b * tri.by) / (a + b);
+
+		CPoint pA2 = ct.ToLogical(tri.ax, tri.ay);
+		CPoint pB2 = ct.ToLogical(tri.bx, tri.by);
+		CPoint pC2 = ct.ToLogical(tri.cx, tri.cy);
+		CPoint pDa = ct.ToLogical(dax, day);
+		CPoint pDb = ct.ToLogical(dbx, dby);
+		CPoint pDc = ct.ToLogical(dcx, dcy);
+		pDC->MoveTo(pA2); pDC->LineTo(pDa);
+		pDC->MoveTo(pB2); pDC->LineTo(pDb);
+		pDC->MoveTo(pC2); pDC->LineTo(pDc);
+		pDC->SelectObject(&pen);
+	}
+
+	// --- Altitudes (korkeusjanat) ---
+	if (tri.bAltitudes)
+	{
+		CPen altPen(PS_SOLID, 1, RGB(200, 0, 140));
+		pDC->SelectObject(&altPen);
+		// Foot of perpendicular from point (vx,vy) onto line (p1)-(p2)
+		auto footPt = [](double vx, double vy,
+		                 double p1x, double p1y, double p2x, double p2y,
+		                 double& hx, double& hy)
+		{
+			double dx = p2x - p1x, dy = p2y - p1y;
+			double len2 = dx*dx + dy*dy;
+			if (len2 < 1e-20) { hx = p1x; hy = p1y; return; }
+			double t = ((vx - p1x)*dx + (vy - p1y)*dy) / len2;
+			hx = p1x + t * dx;
+			hy = p1y + t * dy;
+		};
+		double hax, hay, hbx, hby, hcx, hcy;
+		footPt(tri.ax, tri.ay, tri.bx, tri.by, tri.cx, tri.cy, hax, hay);
+		footPt(tri.bx, tri.by, tri.ax, tri.ay, tri.cx, tri.cy, hbx, hby);
+		footPt(tri.cx, tri.cy, tri.ax, tri.ay, tri.bx, tri.by, hcx, hcy);
+
+		CPoint pA3 = ct.ToLogical(tri.ax, tri.ay);
+		CPoint pB3 = ct.ToLogical(tri.bx, tri.by);
+		CPoint pC3 = ct.ToLogical(tri.cx, tri.cy);
+		CPoint pHa = ct.ToLogical(hax, hay);
+		CPoint pHb = ct.ToLogical(hbx, hby);
+		CPoint pHc = ct.ToLogical(hcx, hcy);
+		pDC->MoveTo(pA3); pDC->LineTo(pHa);
+		pDC->MoveTo(pB3); pDC->LineTo(pHb);
+		pDC->MoveTo(pC3); pDC->LineTo(pHc);
+		pDC->SelectObject(&pen);
+	}
+
+	// --- Medians (keskijanat / mediaanit) ---
+	if (tri.bMedians)
+	{
+		CPen medPen(PS_SOLID, 1, RGB(0, 150, 210));
+		pDC->SelectObject(&medPen);
+		// Each median goes from a vertex to the midpoint of the opposite side
+		CPoint pA4 = ct.ToLogical(tri.ax, tri.ay);
+		CPoint pB4 = ct.ToLogical(tri.bx, tri.by);
+		CPoint pC4 = ct.ToLogical(tri.cx, tri.cy);
+		CPoint pMa = ct.ToLogical((tri.bx + tri.cx) * 0.5, (tri.by + tri.cy) * 0.5);
+		CPoint pMb = ct.ToLogical((tri.ax + tri.cx) * 0.5, (tri.ay + tri.cy) * 0.5);
+		CPoint pMc = ct.ToLogical((tri.ax + tri.bx) * 0.5, (tri.ay + tri.by) * 0.5);
+		pDC->MoveTo(pA4); pDC->LineTo(pMa);
+		pDC->MoveTo(pB4); pDC->LineTo(pMb);
+		pDC->MoveTo(pC4); pDC->LineTo(pMc);
+		pDC->SelectObject(&pen);
+	}
+
+	pDC->SetBkMode(oldBk);
+	pDC->SelectObject(pOld);
+}
 // ---------------------------------------------------------------------------
 static void SampleYFX(const CString& expr, double xStart, double xEnd,
                       std::vector<UserCurve::MathPoint>& out, bool bLogX = false)
@@ -1126,6 +1623,41 @@ void CGraphDrawerDoc::RecomputeUserCurves()
 		else if (c.type == UCT_IMPLICIT)
 			SampleImplicit(c.strExprImplicit, c.xStartImp, c.xEndImp, c.yStartImp, c.yEndImp, c.segments);
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Geometric objects
+// ---------------------------------------------------------------------------
+void CGraphDrawerDoc::AddGeoObject(const GeoObject& obj)
+{
+	{
+		CSingleLock lock(&m_csGeoObjects, TRUE);
+		m_vecGeoObjects.push_back(obj);
+	}
+	SetModifiedFlag();
+	UpdateAllViews(NULL);
+}
+
+void CGraphDrawerDoc::ReplaceGeoObject(int idx, const GeoObject& obj)
+{
+	{
+		CSingleLock lock(&m_csGeoObjects, TRUE);
+		if (idx < 0 || idx >= (int)m_vecGeoObjects.size()) return;
+		m_vecGeoObjects[idx] = obj;
+	}
+	SetModifiedFlag();
+	UpdateAllViews(NULL);
+}
+
+void CGraphDrawerDoc::RemoveGeoObject(int idx)
+{
+	{
+		CSingleLock lock(&m_csGeoObjects, TRUE);
+		if (idx < 0 || idx >= (int)m_vecGeoObjects.size()) return;
+		m_vecGeoObjects.erase(m_vecGeoObjects.begin() + idx);
+	}
+	SetModifiedFlag();
+	UpdateAllViews(NULL);
 }
 
 // ---------------------------------------------------------------------------

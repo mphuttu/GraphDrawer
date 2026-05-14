@@ -26,6 +26,10 @@ coordinate system.
 - Print and print-preview support — output matches the on-screen view exactly,
   with a file-name header and page-number footer on each page.
 - Builds for both **Win32 (x86)** and **x64** targets.
+- **Geometric Figures** — draw labelled line segments and triangles on the coordinate
+  plane.  Triangles support vertex/side/angle labels, angle arc marks, circumscribed
+  and inscribed circles, and four construction lines (perpendicular bisectors, angle
+  bisectors, altitudes, medians).
 
 ## System Requirements
 
@@ -108,7 +112,36 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
 | Functions | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `cosh`, `tanh`, `exp`, `log`/`ln`, `log10`, `sqrt`, `abs`, `sign`, `floor`, `ceil`, `round` |
 | Grouping | Parentheses `(` `)` |
 
-## What's New in 2026-05 (latest)
+## What's New in 2026-06 (latest)
+
+### Geometric Figures
+
+A new **Geometric Figures** dialog (accessible via **Draw › Geometric Figures…**)
+lets you add labelled geometric objects to the coordinate plane:
+
+- **Line Segment** — specify start and end points with an optional name label.
+  Optionally add a parallel line at a given distance or a transversal line through
+  a chosen point at a specified angle.
+- **Triangle** — specify three vertices (A, B, C) and customise:
+  - Custom labels for vertices, sides (a, b, c), and angles (α, β, γ).
+  - Triangle type constraint: *General*, *Right-angled* (C = 90°), *Isosceles*
+    (AC = BC), or *Equilateral*.
+  - **Show** options:
+    - Vertex labels, side labels, angle labels, angle values in degrees.
+    - **Circumscribed circle** (circumcircle) — drawn as an outline, cyan.
+    - **Inscribed circle** (incircle) — drawn as an outline, green.
+    - **Perpendicular bisectors** — dashed purple lines through each side's midpoint.
+    - **Angle bisectors** — dashed orange lines from each vertex to the opposite side.
+    - **Altitudes** — solid pink lines from each vertex perpendicular to the opposite side.
+    - **Medians** — solid blue lines from each vertex to the midpoint of the opposite side.
+
+Bug fixes included in this release:
+- **Angle arc marks** are now always drawn *inside* the triangle for all three
+  vertices (previously the arc at vertex B was drawn on the wrong side).
+- **Circumscribed and inscribed circles** are now drawn as outlines only; previously
+  they were rendered as filled disks that obscured the rest of the drawing.
+
+## What's New in 2026-05
 
 ### Stability and correctness fixes
 

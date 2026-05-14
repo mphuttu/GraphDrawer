@@ -2,6 +2,7 @@
 //
 #include "DrawOptionsDialog.h"
 #include "ExpressionParser.h"
+#include "GeometricObjects.h"
 #include <vector>
 #include <utility>
 #include <cmath>
@@ -268,6 +269,16 @@ public:
 	// Recompute all user-curve points (call after range change).
 	void RecomputeUserCurves();
 
+	// -----------------------------------------------------------------------
+	// Geometric objects
+	// -----------------------------------------------------------------------
+	std::vector<GeoObject>  m_vecGeoObjects;
+	CCriticalSection        m_csGeoObjects;
+
+	void AddGeoObject(const GeoObject& obj);
+	void ReplaceGeoObject(int idx, const GeoObject& obj);
+	void RemoveGeoObject(int idx);
+
 private:
 	// Worker thread --------------------------------------------------------
 	volatile BOOL  m_bCancelDraw;   // set to TRUE to ask the thread to stop
@@ -328,6 +339,8 @@ void DrawCustomFunction(CDC* pDC, const CoordTransform& ct, COLORREF clrColor,
 
 void DrawUserCurves(CDC* pDC, const CoordTransform& ct,
                     std::vector<UserCurve>& vecCurves, CCriticalSection& cs);
+
+void DrawGeometricObjects(CDC* pDC, const CoordTransform& ct, CGraphDrawerDoc* pDoc);
 
 void DrawCustomFunction( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect,
                          COLORREF clrColor, CGraphDrawerDoc* pDoc);

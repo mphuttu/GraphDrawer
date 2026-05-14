@@ -9,6 +9,8 @@
 #include "GraphDrawer.h"
 #endif
 
+#include <algorithm>
+
 #include "GraphDrawerDoc.h"
 #include "GraphDrawerView.h"
 //#include "DrawOptionsDialog.h"
@@ -115,7 +117,7 @@ CoordTransform CGraphDrawerView::BuildCoordTransform(CDC* pDC) const
 
 		if (opts.scaleMode == 0) {
 			double xRange = xMax - xMin, yRange = yMax - yMin;
-			double scale = max(xRange / w, yRange / h);
+			double scale = std::max(xRange / w, yRange / h);
 			double cx = (xMin + xMax) * 0.5, cy = (yMin + yMax) * 0.5;
 			xMin = cx - scale * w * 0.5; xMax = cx + scale * w * 0.5;
 			yMin = cy - scale * h * 0.5; yMax = cy + scale * h * 0.5;
@@ -406,6 +408,9 @@ void CGraphDrawerView::OnDraw(CDC* pDC)
 
 	// Draw user-defined curves
 	DrawUserCurves(pDC, ct, pDoc->m_vecUserCurves, pDoc->m_csUserCurves);
+
+	// Draw geometric figures
+	DrawGeometricObjects(pDC, ct, pDoc);
 
 	// Restore Original device context
 	pDC->RestoreDC(nDC);

@@ -22,6 +22,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_COORDSIZE, OnUpdateCR)
 	ON_COMMAND(ID_VIEW_DRAWFUNCTIONS, &CMainFrame::OnViewDrawfunctions)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_DRAWFUNCTIONS, &CMainFrame::OnUpdateViewDrawfunctions)
+	ON_COMMAND(ID_DRAW_DRAWGEOMETRICFIGURES, &CMainFrame::OnDrawGeometricFigures)
+	ON_UPDATE_COMMAND_UI(ID_DRAW_DRAWGEOMETRICFIGURES, &CMainFrame::OnUpdateDrawGeometricFigures)
 	ON_COMMAND(ID_HELP_CONTENTS, &CMainFrame::OnHelpContents)
 	ON_WM_ACTIVATEAPP()
 END_MESSAGE_MAP()
@@ -40,7 +42,8 @@ static UINT indicators[] =
 
 CMainFrame::CMainFrame()
 {
-	// TODO: add member initialization code here
+	m_bDrawFuncVisible  = FALSE;
+	m_bGeoFiguresVisible = FALSE;
 }
 
 CMainFrame::~CMainFrame()
@@ -81,6 +84,13 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndDrawFunctionsDialog.SetWindowPos(NULL, 10, 200, 0, 0,
 		SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 	SetDrawFuncVisible(TRUE);
+
+	// Create the geometric figures dialog (initially hidden).
+	m_wndDrawGeometricFiguresDialog.Create(IDD_DRAWGEOMETRICFIGURESDIALOG);
+	m_bGeoFiguresVisible = FALSE;
+	m_wndDrawGeometricFiguresDialog.SetWindowPos(NULL, 350, 200, 0, 0,
+		SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+	SetGeoFiguresVisible(FALSE);
 	
 	return 0;
 }
@@ -190,15 +200,32 @@ void CMainFrame::OnActivateApp(BOOL bActive, DWORD dwThreadID)
 {
 	CFrameWnd::OnActivateApp(bActive, dwThreadID);
 
-	// TODO: Add your message handler code here
-	if ( bActive )
+	if (bActive)
 	{
-		if ( AreDrawFuncVisible () )
+		if (AreDrawFuncVisible() && ::IsWindow(m_wndDrawFunctionsDialog.m_hWnd))
 			m_wndDrawFunctionsDialog.ShowWindow(SW_SHOW);
+		if (AreGeoFiguresVisible() && ::IsWindow(m_wndDrawGeometricFiguresDialog.m_hWnd))
+			m_wndDrawGeometricFiguresDialog.ShowWindow(SW_SHOW);
 	}
 	else
 	{
-		if ( AreDrawFuncVisible() )
+		if (AreDrawFuncVisible() && ::IsWindow(m_wndDrawFunctionsDialog.m_hWnd))
 			m_wndDrawFunctionsDialog.ShowWindow(SW_HIDE);
+		if (AreGeoFiguresVisible() && ::IsWindow(m_wndDrawGeometricFiguresDialog.m_hWnd))
+			m_wndDrawGeometricFiguresDialog.ShowWindow(SW_HIDE);
 	}
+}
+
+void CMainFrame::OnDrawGeometricFigures()
+{
+	BOOL bNewVisible = m_bGeoFiguresVisible ? FALSE : TRUE;
+	SetGeoFiguresVisible(bNewVisible);
+	if (bNewVisible)
+		m_wndDrawGeometricFiguresDialog.RefreshList();
+}
+
+void CMainFrame::OnUpdateDrawGeometricFigures(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(TRUE);
+	pCmdUI->SetCheck(m_bGeoFiguresVisible ? 1 : 0);
 }
