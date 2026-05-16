@@ -236,7 +236,7 @@
     <ResourceCompile Include="GraphDrawer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\GraphDrawer.ico" />
+    <Image Include="res\GraphDrawerIcon.ico" />
     <Image Include="res\GraphDrawerDoc.ico" />
     <Image Include="res\Toolbar.bmp" />
   </ItemGroup>

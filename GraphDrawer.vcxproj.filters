@@ -105,7 +105,7 @@
     <Image Include="res\GraphDrawerDoc.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="res\GraphDrawer.ico">
+    <Image Include="res\GraphDrawerIcon.ico">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="res\Toolbar.bmp">

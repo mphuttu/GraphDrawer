@@ -34,6 +34,7 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 ; Appearance
 WizardStyle=modern
+SetupIconFile=..\res\GraphDrawerIcon.ico
 ; Minimum Windows version: Windows 10 (6.2 or later accepted for compatibility)
 MinVersion=6.1
 

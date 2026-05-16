@@ -114,6 +114,11 @@ msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
 
 ## What's New in 2026-06 (latest)
 
+### New Application Icon
+
+The application icon has been updated to a new custom design (`GraphDrawerIcon.ico`).
+The installer icon is updated accordingly.
+
 ### Geometric Figures
 
 A new **Geometric Figures** dialog (accessible via **Draw › Geometric Figures…**)
