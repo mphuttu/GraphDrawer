@@ -3,6 +3,8 @@
 A Windows MFC application for plotting mathematical functions on a 2-D Cartesian
 coordinate system.
 
+![GraphDrawer screenshot](Docs/images/2026-05-18-GraphDrawer-Screenshot.png)
+
 ## Features
 
 - Plot up to **14 built-in functions** simultaneously (sine, cosine, tangent,
