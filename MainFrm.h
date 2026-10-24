@@ -5,6 +5,7 @@
 #pragma once
 #include "DrawFunctionsDialog.h"
 #include "DrawGeometricFiguresDialog.h"
+#include "MenuIcons.h"
 
 class CMainFrame : public CFrameWnd
 {
@@ -55,6 +56,8 @@ protected:  // control bar embedded members
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnUpdateCR(CCmdUI* pCmdUI);
+	afx_msg void OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu);
+	afx_msg void OnDestroy();
 	DECLARE_MESSAGE_MAP()
 
 	CDrawFunctionsDialog          m_wndDrawFunctionsDialog;
@@ -62,6 +65,7 @@ protected:
 
 	CDrawGeometricFiguresDialog   m_wndDrawGeometricFiguresDialog;
 	BOOL                          m_bGeoFiguresVisible;
+	CMenuIconManager              m_menuIconManager;
 
 public:
 	afx_msg void OnViewDrawfunctions();
@@ -71,5 +75,4 @@ public:
 	afx_msg void OnDrawGeometricFigures();
 	afx_msg void OnUpdateDrawGeometricFigures(CCmdUI* pCmdUI);
 };
-
 

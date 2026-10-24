@@ -233,6 +233,7 @@ END
 STRINGTABLE
 BEGIN
     IDP_OLE_INIT_FAILED     "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    IDP_MENU_ICONS_FAILED   "Menu command icons could not be initialized.  Restart the application and try again."
 END
 
 STRINGTABLE
@@ -791,4 +792,3 @@ LANGUAGE 9, 1
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

@@ -5,6 +5,7 @@
 #define ID_INDICATOR_COORDSIZE          1
 #define IDD_ABOUTBOX                    100
 #define IDP_OLE_INIT_FAILED             100
+#define IDP_MENU_ICONS_FAILED           101
 #define IDR_MAINFRAME                   128
 #define IDR_GraphDrawerTYPE             130
 #define IDD_DRAWOPTIONSDIALOG           310

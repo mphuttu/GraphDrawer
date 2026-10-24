@@ -19,6 +19,8 @@ IMPLEMENT_DYNCREATE(CMainFrame, CFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_CREATE()
+	ON_WM_INITMENUPOPUP()
+	ON_WM_DESTROY()
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_COORDSIZE, OnUpdateCR)
 	ON_COMMAND(ID_VIEW_DRAWFUNCTIONS, &CMainFrame::OnViewDrawfunctions)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_DRAWFUNCTIONS, &CMainFrame::OnUpdateViewDrawfunctions)
@@ -93,6 +95,42 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetGeoFiguresVisible(FALSE);
 	
 	return 0;
+}
+
+void CMainFrame::OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu)
+{
+	CFrameWnd::OnInitMenuPopup(pPopupMenu, nIndex, bSysMenu);
+
+	if (bSysMenu || !pPopupMenu || !GetMenu())
+		return;
+
+	UINT dpi = 96;
+	using GetDpiForWindowFunction = UINT(WINAPI*)(HWND);
+	HMODULE user32 = GetModuleHandleW(L"user32.dll");
+	GetDpiForWindowFunction getDpiForWindow = user32
+		? reinterpret_cast<GetDpiForWindowFunction>(GetProcAddress(user32, "GetDpiForWindow"))
+		: nullptr;
+	if (getDpiForWindow)
+		dpi = getDpiForWindow(GetSafeHwnd());
+
+	if (!m_menuIconManager.ApplyToPopup(GetMenu()->GetSafeHmenu(), pPopupMenu->GetSafeHmenu(), dpi))
+	{
+		TRACE0("Failed to apply menu command icons.\n");
+		static BOOL warningShown = FALSE;
+		if (!warningShown)
+		{
+			warningShown = TRUE;
+			AfxMessageBox(IDP_MENU_ICONS_FAILED, MB_OK | MB_ICONWARNING);
+		}
+	}
+}
+
+void CMainFrame::OnDestroy()
+{
+	if (GetMenu())
+		m_menuIconManager.Clear(GetMenu()->GetSafeHmenu());
+
+	CFrameWnd::OnDestroy();
 }
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
