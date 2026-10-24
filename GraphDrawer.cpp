@@ -41,12 +41,7 @@ CGraphDrawerApp::CGraphDrawerApp()
 	System::Windows::Forms::Application::SetUnhandledExceptionMode(System::Windows::Forms::UnhandledExceptionMode::ThrowException);
 #endif
 
-	// TODO: replace application ID string below with unique ID string; recommended
-	// format for string is CompanyName.ProductName.SubProduct.VersionInformation
-	SetAppID(_T("GraphDrawer.AppID.NoVersion"));
-
-	// TODO: add construction code here,
-	// Place all significant initialization in InitInstance
+	SetAppID(_T("MikaHuttunen.GraphDrawer.1.0"));
 }
 
 // The one and only CGraphDrawerApp object
@@ -82,16 +77,8 @@ BOOL CGraphDrawerApp::InitInstance()
 
 	EnableTaskbarInteraction(FALSE);
 
-	// AfxInitRichEdit2() is required to use RichEdit control	
-	// AfxInitRichEdit2();
-
 	// Standard initialization
-	// If you are not using these features and wish to reduce the size
-	// of your final executable, you should remove from the following
-	// the specific initialization routines you do not need
-	// Change the registry key under which our settings are stored
-	// TODO: You should modify this string to be something appropriate
-	// such as the name of your company or organization
+	// Preserve the existing profile path so the current MRU list remains available.
 	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
 	LoadStdProfileSettings(4);  // Load standard INI file options (including MRU)
 
@@ -135,7 +122,6 @@ BOOL CGraphDrawerApp::InitInstance()
 
 int CGraphDrawerApp::ExitInstance()
 {
-	//TODO: handle additional resources you may have added
 	AfxOleTerm(FALSE);
 
 	return CWinApp::ExitInstance();
@@ -182,6 +168,5 @@ void CGraphDrawerApp::OnAppAbout()
 }
 
 // CGraphDrawerApp message handlers
-
 
 

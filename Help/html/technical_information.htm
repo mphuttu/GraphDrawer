@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Technical Information</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Technical Information</h1>
+<p class="nav"><a href="welcome.htm">Home</a> |
+<a href="getting_started.htm">Getting Started</a> |
+<a href="customization.htm">Customization</a> |
+<a href="troubleshooting.htm">Troubleshooting</a> |
+<a href="faq.htm">FAQ</a> |
+<a href="technical_information.htm">Technical Information</a> |
+<a href="release_notes.htm">Release Notes</a></p>
+
+<h2>Description</h2>
+<p>This topic documents supported platforms, expression evaluation, document
+storage, build requirements and the CHM help source layout.</p>
+
+<h2>How to Use</h2>
+<p>Use the sections below when deploying GraphDrawer, preparing a development
+build or diagnosing architecture and runtime requirements.</p>
+
+<h2>System Requirements</h2>
+<ul>
+  <li>Windows 10 or later.</li>
+  <li>Microsoft Visual C++ 2015-2022 Redistributable matching the application's
+      architecture.</li>
+  <li>The corresponding Microsoft MFC runtime. GraphDrawer uses dynamic MFC linkage.</li>
+  <li>For development: Visual Studio with the C++ desktop workload, MFC and a
+      compatible Windows SDK.</li>
+</ul>
+
+<h2 id="expressions">Expression Syntax</h2>
+<p>The parser supports numeric literals, parentheses and these operators:</p>
+<table>
+  <tr><th>Syntax</th><th>Meaning</th><th>Example</th></tr>
+  <tr><td><code>+</code>, <code>-</code></td><td>Addition, subtraction, unary negation</td>
+      <td><code>-x+2</code></td></tr>
+  <tr><td><code>*</code>, <code>/</code></td><td>Multiplication, division</td>
+      <td><code>3*x</code>, <code>x/(x+1)</code></td></tr>
+  <tr><td><code>^</code></td><td>Power; right-associative</td><td><code>x^3</code></td></tr>
+  <tr><td><code>( )</code></td><td>Grouping</td><td><code>(x+1)^2</code></td></tr>
+</table>
+<p>Constants: <code>pi</code>, <code>e</code>. Functions: <code>sin</code>,
+<code>cos</code>, <code>tan</code>, <code>asin</code>/<code>arcsin</code>,
+<code>acos</code>/<code>arccos</code>, <code>atan</code>/<code>arctan</code>,
+<code>sinh</code>, <code>cosh</code>, <code>tanh</code>, <code>exp</code>,
+<code>log</code>/<code>ln</code>, <code>log10</code>, <code>sqrt</code>,
+<code>abs</code>, <code>sign</code>, <code>floor</code>, <code>ceil</code>, and
+<code>round</code>. Trigonometric functions use radians.</p>
+<p>Exponentiation binds more tightly than unary minus:
+<code>-x^2</code> means <code>-(x^2)</code>. Use <code>(-x)^2</code> when the
+negative value itself should be squared. Multiplication must be explicit.</p>
+
+<h2>Curve Evaluation</h2>
+<p>GraphDrawer evaluates expressions numerically and samples points to draw lines.
+The quick custom expression is evaluated on a background thread. User-defined
+explicit, parametric, polar and implicit curves are also evaluated numerically.
+Undefined or non-finite values are omitted from the rendered curve.</p>
+
+<h2>Document Files</h2>
+<p>Documents use GraphDrawer's serialized MFC document format. The file stores
+display options, function visibility, curve definitions and geometric objects.
+Curve sample points are recomputed after loading. Save files using the File menu.</p>
+
+<h2>Build the Application</h2>
+<p>Open <code>GraphDrawer.sln</code> in Visual Studio, select Release and x64, then
+build the solution. The configured Release x64 output is:</p>
+<pre>D:\Projects\MFC\GraphDrawer\GraphDrawer\Release\x64\GraphDrawer.exe</pre>
+<p>Command-line build:</p>
+<pre>MSBuild.exe GraphDrawer.sln /m /p:Configuration=Release /p:Platform=x64 /t:Build</pre>
+
+<h2 id="help-file">Build the CHM Help File</h2>
+<p>Help source files are under <code>Help</code>. Install
+<a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/htmlhelp/microsoft-html-help-downloads">Microsoft HTML Help Workshop</a>,
+then run this from PowerShell at the repository root:</p>
+<pre>powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Help\build-chm.ps1</pre>
+<p>The compiled output is <code>Help\GraphDrawer.chm</code>. The script locates
+HTML Help Workshop in its standard installation folder and fails with an error
+if the compiler or output file is missing.</p>
+
+<h2>Build the Installer</h2>
+<p>Build the Release x64 application and CHM file first. Install
+<a href="https://jrsoftware.org/isdl.php">Inno Setup 6</a>, then compile
+<code>Setup\GraphDrawer_Setup.iss</code> with ISCC. The installer
+includes the executable, Help file and README. It does not bundle the Visual C++
+Redistributable; deploy that runtime separately when required.</p>
+
+<h2>Tips</h2>
+<ul>
+  <li>Use Release x64 for the standard installer build.</li>
+  <li>Rebuild the CHM before compiling the installer so it contains current help.</li>
+  <li>Use Print Preview to inspect the one-page print layout.</li>
+</ul>
+
+<h2>Limitations</h2>
+<p>GraphDrawer does not provide symbolic mathematics, plot export or multi-page
+graph printing. Numerical sampling can miss narrow features and does not establish
+mathematical continuity.</p>
+
+<h2>Examples</h2>
+<p>A quadratic is <code>x^2</code>; an exponential is <code>exp(x)</code>;
+a circle is <code>x^2+y^2-1=0</code> in Implicit mode.</p>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="getting_started.htm">Getting Started</a></li>
+  <li><a href="troubleshooting.htm">Troubleshooting</a></li>
+  <li><a href="release_notes.htm">Release Notes</a></li>
+</ul>
+<p class="note"><strong>Notes:</strong> Build prerequisites and application
+runtime prerequisites are different: installing Visual Studio is not required
+to run an already-built release application.</p>
+<p class="tip"><strong>Tips:</strong> Keep the CHM beside the installed application
+under the <code>Help</code> folder so the Help menu can find it.</p>
+<p class="warning"><strong>Warnings:</strong> Do not distribute an executable
+without its required MFC and Visual C++ runtime dependencies.</p>
+</body>
+</html>

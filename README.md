@@ -1,241 +1,134 @@
 # GraphDrawer
 
-A Windows MFC application for plotting mathematical functions on a 2-D Cartesian
-coordinate system.
-
-![GraphDrawer screenshot](Docs/images/2026-05-18-GraphDrawer-Screenshot.png)
+GraphDrawer is a Windows desktop application for plotting mathematical
+functions and geometric constructions on a two-dimensional coordinate plane.
+It is written in C++ with Microsoft Foundation Classes (MFC).
 
 ## Features
 
-- Plot up to **14 built-in functions** simultaneously (sine, cosine, tangent,
-  cotangent, exponential, natural logarithm, arcus sine/cosine/tangent/cotangent,
-  and the four hyperbolic equivalents).
-- Enter an **arbitrary expression** `y = f(x)` using a recursive-descent expression
-  parser that supports all common mathematical operators, functions, and constants.
-- **Parametric curves** — plot `x(t)`, `y(t)` expressions over a given t-range
-  (e.g. a cycloid with `x = a*(t - sin(t))`, `y = a*(1 - cos(t))`).
-- **User-defined curve library** — add multiple `y = f(x)` or parametric curves via
-  the *Add…* button in the Draw Functions palette.  Each curve has its own label,
-  colour, and a checkbox to toggle visibility.
-- **Zoomable / pannable** coordinate view — scroll the mouse wheel to zoom in or out
-  centred on the viewport; drag with the left mouse button to pan; right-click to
-  reset the view to the default range.
-- **Configurable axis range** — set the visible x/y range (min and max) in the
-  *Draw Options* dialog instead of being limited to a fixed ±10 window.
-- **Background thread** computation for custom expressions — the UI stays responsive.
-- Customisable coordinate axes: colour, line thickness, tick marks, and labels.
-- Selectable background colour.
-- Print and print-preview support — output matches the on-screen view exactly,
-  with a file-name header and page-number footer on each page.
-- Builds for both **Win32 (x86)** and **x64** targets.
-- **Geometric Figures** — draw labelled line segments and triangles on the coordinate
-  plane.  Triangles support vertex/side/angle labels, angle arc marks, circumscribed
-  and inscribed circles, and four construction lines (perpendicular bisectors, angle
-  bisectors, altitudes, medians).
+- Fourteen built-in functions, including trigonometric, inverse trigonometric,
+  exponential, logarithmic and hyperbolic functions.
+- A numerical expression parser for custom `y = f(x)` expressions.
+- User-defined explicit, parametric, polar and implicit curves, with labels,
+  colors and visibility controls.
+- Geometric line segments and triangles, including construction lines, angle
+  labels, circumcircles and incircles.
+- Equal, free and base-10 logarithmic coordinate scales; configurable axes,
+  ranges and colors.
+- Mouse-wheel zoom, left-button panning and right-click view reset.
+- Document save/open, print and print-preview support.
+- Windows HTML Help (`.chm`) documentation, accessible from **Help > Help
+  Contents** or **F1**.
 
-## System Requirements
+## Requirements
 
-- Windows 10 or later (Windows 7/8 may work but are untested).
-- [Visual C++ 2019 Redistributable][vcredist] (x86 or x64 matching the build you run).
-- MFC is linked dynamically, so the MFC DLLs must be present on the target machine
-  (the Visual C++ redistributable package includes them).
+### To run GraphDrawer
 
-[vcredist]: https://aka.ms/vs/17/release/vc_redist.x64.exe
+- Windows 10 or later.
+- Microsoft Visual C++ 2015-2022 Redistributable matching the executable's
+  architecture.
+- The corresponding MFC runtime. The application links MFC dynamically.
 
-## Building
+### To build GraphDrawer
 
-1. Open `GraphDrawer.vcxproj` in Visual Studio 2019 or later.
-2. Select the desired **Configuration** (`Debug` or `Release`) and **Platform**
-   (`Win32` or `x64`).
-3. Build → Build Solution (or press **F7**).
+- Visual Studio with the **Desktop development with C++** workload.
+- MFC and a compatible Windows SDK.
+- For the installer, Inno Setup 6.
+- For the CHM help file, Microsoft HTML Help Workshop.
 
-| Configuration | Platform | Output path |
-|---------------|----------|-------------|
-| Debug         | Win32    | `Debug\GraphDrawer.exe` |
-| Release       | Win32    | `Release\GraphDrawer.exe` |
-| Debug         | x64      | `Debug\x64\GraphDrawer.exe` |
-| Release       | x64      | `Release\x64\GraphDrawer.exe` |
+## Build the application
 
-Alternatively, build from the command line:
+Open `GraphDrawer.sln`, select the **Release** configuration and **x64**
+platform, then build the solution. The Release x64 output is configured as:
 
-```
-msbuild GraphDrawer.vcxproj /p:Configuration=Release /p:Platform=x64
+```text
+GraphDrawer\Release\x64\GraphDrawer.exe
 ```
 
-## Usage
+From a Visual Studio Developer PowerShell, run:
 
-1. Launch `GraphDrawer.exe`.
-2. The **Draw Functions** palette appears automatically.  Tick any built-in function
-   checkbox to plot it.
-3. To plot a custom expression, type it in the **y =** field and tick
-   **Draw Custom Function**.  Press **OK** to apply.
-4. Use **Draw › Draw Options…** to change axis style, tick interval, colours, and
-   the visible coordinate range (x min/max, y min/max).
-
-### Zooming and Panning
-
-| Action | Effect |
-|--------|--------|
-| Mouse wheel up | Zoom in (centred on viewport) |
-| Mouse wheel down | Zoom out |
-| Left-button drag | Pan |
-| Right-click | Reset view to the range set in Draw Options |
-
-### Adding User-Defined Curves
-
-1. Open the **Draw Functions** palette.
-2. Click **Add…** in the *User-Defined Curves* group.
-3. In the dialog that opens:
-   - Choose **y = f(x)**, **Parametric**, **Polar**, or **Implicit**.
-   - Enter the expression(s), the range, an optional label, and a colour.
-   - Range fields accept constant expressions: `2*pi`, `-pi`, `e^2`, etc.
-   - Click **OK**.
-4. The new curve appears in the checkbox list.  Uncheck it to hide it.
-5. To **edit** an existing curve: select it in the list and click **Edit…** — the
-   dialog reopens pre-filled; confirm with **OK** to apply changes.
-6. Click **Remove** to delete the selected curve.
-
-### Parametric Curve Examples
-
-| Curve | x(t) | y(t) | t range |
-|-------|------|------|---------|
-| Circle | `cos(t)` | `sin(t)` | 0 … 2π |
-| Cycloid (a = 1) | `t - sin(t)` | `1 - cos(t)` | 0 … 6π |
-| Lissajous | `sin(3*t)` | `sin(2*t + pi/4)` | 0 … 2π |
-
-### Expression Syntax
-
-| Element | Syntax |
-|---------|--------|
-| Variable | `x` (for y=f(x) curves) or `t` (for parametric curves) |
-| Constants | `pi`, `e` |
-| Arithmetic | `+`, `-`, `*`, `/` |
-| Power | `x^3`, `2^x` (right-associative; unary `-` has lower precedence, so `-x^2` = `-(x^2)`) |
-| Functions | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `cosh`, `tanh`, `exp`, `log`/`ln`, `log10`, `sqrt`, `abs`, `sign`, `floor`, `ceil`, `round` |
-| Grouping | Parentheses `(` `)` |
-
-## What's New in 2026-06 (latest)
-
-### New Application Icon
-
-The application icon has been updated to a new custom design (`GraphDrawerIcon.ico`).
-The installer icon is updated accordingly.
-
-### Geometric Figures
-
-A new **Geometric Figures** dialog (accessible via **Draw › Geometric Figures…**)
-lets you add labelled geometric objects to the coordinate plane:
-
-- **Line Segment** — specify start and end points with an optional name label.
-  Optionally add a parallel line at a given distance or a transversal line through
-  a chosen point at a specified angle.
-- **Triangle** — specify three vertices (A, B, C) and customise:
-  - Custom labels for vertices, sides (a, b, c), and angles (α, β, γ).
-  - Triangle type constraint: *General*, *Right-angled* (C = 90°), *Isosceles*
-    (AC = BC), or *Equilateral*.
-  - **Show** options:
-    - Vertex labels, side labels, angle labels, angle values in degrees.
-    - **Circumscribed circle** (circumcircle) — drawn as an outline, cyan.
-    - **Inscribed circle** (incircle) — drawn as an outline, green.
-    - **Perpendicular bisectors** — dashed purple lines through each side's midpoint.
-    - **Angle bisectors** — dashed orange lines from each vertex to the opposite side.
-    - **Altitudes** — solid pink lines from each vertex perpendicular to the opposite side.
-    - **Medians** — solid blue lines from each vertex to the midpoint of the opposite side.
-
-Bug fixes included in this release:
-- **Angle arc marks** are now always drawn *inside* the triangle for all three
-  vertices (previously the arc at vertex B was drawn on the wrong side).
-- **Circumscribed and inscribed circles** are now drawn as outlines only; previously
-  they were rendered as filled disks that obscured the rest of the drawing.
-
-## What's New in 2026-05
-
-### Stability and correctness fixes
-
-- **Print Preview header no longer shows garbled characters.**  The header font
-  was previously sized in screen pixels but rendered in MM_LOMETRIC units, making
-  it illegibly small (≈ 1.6 mm tall on a 96 dpi display).  The font height is now
-  specified in proper MM_LOMETRIC logical units (≈ 4.2 mm ≈ 12 pt).  In addition,
-  the Y coordinate of the header and footer text was computed with the wrong sign
-  (MM_LOMETRIC Y grows upward, not downward), so both texts were drawn outside the
-  printable area.  Both offsets are now correct.
-- **Crash after prolonged use with multiple user-defined curves fixed.**  Every
-  repaint of the custom `y = f(x)` curve selected a GDI pen object into the DC
-  but never deselected it before the pen went out of scope.  `DeleteObject` fails
-  silently on a pen that is still selected, so one GDI handle leaked per repaint.
-  Windows limits a process to ≈ 10 000 GDI handles; after enough zoom/pan operations
-  the pool was exhausted and the application crashed.  The old pen is now saved and
-  restored before the `CPen` is destroyed.
-- **Worker-thread use-after-free fixed.**  The background expression-evaluation
-  thread was launched with `m_bAutoDelete = TRUE`, which lets MFC delete the
-  `CWinThread` object as soon as the thread exits.  If the thread finished before
-  `SetCustomExpression` or the document destructor called
-  `WaitForSingleObject(m_pDrawThread->m_hThread, …)`, the handle was read from
-  already-freed memory (undefined behaviour, potential crash).
-  `m_bAutoDelete` is now `FALSE`; the `CWinThread` object is explicitly `delete`d
-  after the wait completes.
-
-### Expression parser fixes and improvements
-- **Negative exponents now work correctly**: `exp(-x^2)` is now evaluated as
-  `exp(-(x^2))`, i.e. unary minus has lower precedence than `^`.
-  Previously `-x^2` was incorrectly treated as `(-x)^2`.
-- **`pi` and `e` in range fields**: all numeric input fields that accept a range
-  value (x from/to, t from/to, φ from/to, implicit x/y from/to, and the
-  custom-expression x-range) now accept arbitrary constant expressions such as
-  `2*pi`, `-pi/2`, or `e^2` in addition to plain numbers.
-
-### User-defined curve editing
-- **Edit… button** added to the *User-Defined Curves* group in the Draw Functions
-  palette.  Select a curve in the list and click **Edit…** to re-open the
-  *Add Curve* dialog pre-filled with the curve's current settings.  Confirm with
-  **OK** to replace the curve in-place, or **Cancel** to leave it unchanged.
-
-## What's New in 2026-04
-- **Polar curves**: add curves of the form r = f(φ), e.g. spirals and rose curves.
-- **Implicit curves**: add curves of the form f(x, y) = 0, e.g. astroid, circle, ellipse.
-
-## What's New in 2026-05 — Scale Modes and Pixel-Based Rendering
-
-### Three Scale Modes (*Draw Options › Scale Mode*)
-
-| Mode | Description |
-|------|-------------|
-| **Equal Scale** | Both axes use the same number of pixels per mathematical unit, regardless of the monitor's DPI or aspect ratio.  A circle `x² + y² = 1` is drawn as a true circle, not an ellipse. |
-| **Free Scale** | Set independent X and Y scales in centimetres per unit via the *Scale X* and *Scale Y* fields. |
-| **Logarithmic** | One or both axes are logarithmic (base 10).  Select the sub-mode with the radio buttons next to the *Logarithmic scale* option: **Log X, Linear Y** / **Linear X, Log Y** / **Log X, Log Y**.  Axis values must be strictly positive. |
-
-### Technical Notes
-- Screen rendering now uses **pixel coordinates** (`MM_TEXT`) obtained directly
-  from `GetClientRect` — no more `MM_LOMETRIC` conversion, which could produce
-  incorrect aspect ratios on non-square-DPI monitors.
-- Print rendering still uses `MM_LOMETRIC`.
-- In Equal Scale mode, `aspect = w/h` expands the shorter axis so that
-  1 mathematical unit spans exactly the same number of pixels in both directions.
-- The tick step (`niceStep`) is forced to the same value for both axes when the
-  scales are equal, so tick marks appear physically equally dense in both directions.
-- Mouse panning uses the correct pixels-per-unit ratio in every scale mode.
-
-## Help
-
-The compiled help file `Help\GraphDrawer.chm` can be opened from the application's
-**Help** menu or directly from Windows Explorer.
-
-To recompile the help file from sources (requires
-[HTML Help Workshop](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/htmlhelp/microsoft-html-help-downloads)):
-
-```
-cd Help
-hhc GraphDrawer.hhp
+```powershell
+MSBuild.exe GraphDrawer.sln /m /p:Configuration=Release /p:Platform=x64 /t:Build
 ```
 
-## Known Limitations
+The project also supports Debug and Win32 configurations. Those configurations
+use their configured output directories.
 
-- The custom `y = f(x)` background-thread expression is re-evaluated when the
-  expression text or x-range changes; zooming does not trigger re-evaluation —
-  use the **x-range** fields in Draw Options to control the sampling domain.
-- No undo/redo for Draw Options changes (document dirty-flag is set but only the
-  function-selection settings are persisted to file).
+## Build the CHM help file
+
+Help source and the HTML Help Workshop project are in `Help`. Install
+[Microsoft HTML Help Workshop][html-help-workshop], then run this from the
+repository root in PowerShell:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Help\build-chm.ps1
+```
+
+The compiled file is `Help\GraphDrawer.chm`. To compile manually, open
+`Help\GraphDrawer.hhp` in HTML Help Workshop or run `hhc.exe` from the `Help`
+directory.
+
+The Help Contents tab provides these primary topics:
+
+1. Welcome to GraphDrawer
+2. Getting Started
+3. Customization
+4. Troubleshooting
+5. Frequently Asked Questions
+6. Technical Information
+7. Release Notes
+
+## Build the installer
+
+1. Build the Release x64 application.
+2. Build the CHM help file.
+3. Compile `Setup\GraphDrawer_Setup.iss` with [Inno Setup 6][inno-setup] (ISCC).
+
+The installer is written to `Setup\Setup\Output\GraphDrawer_Setup_1.0_x64.exe`.
+It installs the application, CHM help file and this README. The Visual C++
+Redistributable is not bundled; install it separately on systems that need it.
+
+## Quick start
+
+1. Launch `GraphDrawer.exe`; the Draw Functions palette opens automatically.
+2. Check any built-in function, or enter an expression such as `x^2 - x + 1`
+   in the `y =` field and enable **Draw Custom Function**.
+3. Click **Add...** to create a named explicit, parametric, polar or implicit curve.
+4. Choose **Draw > Draw Options...** to set the visible range and scale.
+5. Use the mouse wheel to zoom, drag with the left mouse button to pan, and
+   right-click to reset the view.
+6. Choose **Draw > Draw Geometric Figures** to add segments or triangles.
+
+Expression function arguments use radians. Supported operators include `+`,
+`-`, `*`, `/` and `^`; multiplication must be explicit (`2*x`). Constants
+include `pi` and `e`. Available functions include `sin`, `cos`, `tan`, `asin`,
+`acos`, `atan`, `sinh`, `cosh`, `tanh`, `exp`, `log`/`ln`, `log10`, `sqrt`,
+`abs`, `sign`, `floor`, `ceil` and `round`.
+
+## Document format
+
+GraphDrawer documents use the `.gra` extension. A document stores drawing
+options, enabled built-in functions, curve definitions and geometric objects.
+Computed curve points are recalculated when the document is opened.
+
+## Known limitations
+
+- Curves are plotted by numerical sampling. Very narrow features or
+  discontinuities may be missed or appear as gaps.
+- The quick custom `y = f(x)` plot is sampled over its configured x-range;
+  zooming does not extend that range.
+- Logarithmic axes display only positive values.
+- Printing is limited to one page.
+
+## Release notes
+
+See **Help > Help Contents > Release Notes** for the documented feature history.
+The project README and the CHM are maintained as user and developer references;
+the CHM is included in the installer.
 
 ## License
 
 This project is provided as-is for educational and personal use.
+
+[html-help-workshop]: https://learn.microsoft.com/en-us/previous-versions/windows/desktop/htmlhelp/microsoft-html-help-downloads
+[inno-setup]: https://jrsoftware.org/isdl.php

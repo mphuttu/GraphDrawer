@@ -46,8 +46,6 @@ END_MESSAGE_MAP()
 
 CGraphDrawerDoc::CGraphDrawerDoc() : m_sizDoc(850,1100)
 {
-	// TODO: add one-time construction code here
-
 	m_nTicksInterval = 100;
 
 	// Coordinate Axes and Ticks
@@ -102,9 +100,6 @@ BOOL CGraphDrawerDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
-
-	// TODO: add reinitialization code here
-	// (SDI documents will reuse this document)
 
 	return TRUE;
 }
@@ -406,10 +401,10 @@ void CGraphDrawerDoc::Serialize(CArchive& ar)
 // Support for thumbnails
 void CGraphDrawerDoc::OnDrawThumbnail(CDC& dc, LPRECT lprcBounds)
 {
-	// Modify this code to draw the document's data
+	// Draw a simple title in shell thumbnails.
 	dc.FillSolidRect(lprcBounds, RGB(255, 255, 255));
 
-	CString strText = _T("TODO: implement thumbnail drawing here");
+	CString strText = _T("GraphDrawer");
 	LOGFONT lf;
 
 	CFont* pDefaultGUIFont = CFont::FromHandle((HFONT) GetStockObject(DEFAULT_GUI_FONT));
@@ -475,7 +470,6 @@ void CGraphDrawerDoc::Dump(CDumpContext& dc) const
 
 void CGraphDrawerDoc::OnDrawDrawoptions()
 {
-	// TODO: Add your command handler code here
 	CDrawOptionsDialog aDlg;
 
 	aDlg.SetData(m_DrawOptionsData);
@@ -1877,4 +1871,3 @@ void DrawHyperbolicCotan(CDC* pDC, const CoordTransform& ct, COLORREF clrColor)
 		return 1.0 / std::tanh(x);
 	});
 }
-

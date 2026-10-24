@@ -3,17 +3,17 @@ Compatibility=1.1 or later
 Compiled file=GraphDrawer.chm
 Contents file=GraphDrawer.hhc
 Index file=GraphDrawer.hhk
-Default topic=html\overview.htm
+Default topic=html\welcome.htm
 Display compile progress=No
 Language=0x409 English (United States)
 Title=GraphDrawer Help
 
 [FILES]
-html\overview.htm
-html\interface.htm
-html\drawing_functions.htm
-html\custom_expression.htm
-html\draw_options.htm
-html\keyboard.htm
-
-[INFOTYPES]
+html\style.css
+html\welcome.htm
+html\getting_started.htm
+html\customization.htm
+html\troubleshooting.htm
+html\faq.htm
+html\technical_information.htm
+html\release_notes.htm

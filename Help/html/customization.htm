@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Customization</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Customization</h1>
+<p class="nav"><a href="welcome.htm">Home</a> |
+<a href="getting_started.htm">Getting Started</a> |
+<a href="customization.htm">Customization</a> |
+<a href="troubleshooting.htm">Troubleshooting</a> |
+<a href="faq.htm">FAQ</a> |
+<a href="technical_information.htm">Technical Information</a> |
+<a href="release_notes.htm">Release Notes</a></p>
+
+<h2>Description</h2>
+<p>Use Draw Options and the curve dialogs to tailor the coordinate view, axis
+appearance, colors, scale and displayed content.</p>
+
+<h2>How to Use</h2>
+<ol>
+  <li>Open <strong>Draw &gt; Draw Options...</strong>.</li>
+  <li>Set the coordinate limits, axis and tick visibility, colors and thickness.</li>
+  <li>Select a scale mode and enter its related values.</li>
+  <li>Click <strong>OK</strong>. The view returns to the configured range.</li>
+</ol>
+
+<h2 id="axes">Axes and Appearance</h2>
+<p>Toggle coordinate axes, tick marks and tick labels independently. Choose the
+axis color and line thickness, and select a background color. Tick spacing is
+chosen automatically from readable intervals; the interval field controls the
+requested subdivision density.</p>
+
+<h2>Coordinate Range</h2>
+<p>Enter minimum and maximum values for X and Y. The minimum must be lower than
+the maximum. After applying the dialog, right-click in the graph at any time to
+reset the view to these limits.</p>
+
+<h2 id="scale">Scale Modes</h2>
+<table>
+  <tr><th>Mode</th><th>Description</th><th>Use</th></tr>
+  <tr><td>Equal Scale</td><td>One unit uses the same screen distance on both axes.
+      The shorter range is expanded to preserve the aspect ratio.</td>
+      <td>Geometry where circles and angles should appear undistorted.</td></tr>
+  <tr><td>Free Scale</td><td>Set separate X and Y centimetres-per-unit values.</td>
+      <td>Comparing quantities with different visual scales.</td></tr>
+  <tr><td>Logarithmic</td><td>Choose Log X / Linear Y, Linear X / Log Y, or Log X / Log Y.</td>
+      <td>Data spanning multiple orders of magnitude.</td></tr>
+</table>
+<p>For a log axis, values must be positive. If a configured lower limit is not
+positive, the application clamps it to a small positive value for display.</p>
+
+<h2>Curve and Geometry Appearance</h2>
+<p>Each user-defined curve has a label, color and independent visibility checkbox.
+Select a curve in the palette to edit or remove it. Geometric objects can be
+shown or hidden individually; triangle labels and construction lines are selected
+in the triangle dialog.</p>
+
+<h2>Tips</h2>
+<ul>
+  <li>Choose Equal Scale when comparing geometric shapes.</li>
+  <li>For exponential growth, try Linear X / Log Y; for power laws, try Log X / Log Y.</li>
+  <li>Use a high-contrast axis and curve color against the selected background.</li>
+</ul>
+
+<h2>Limitations</h2>
+<p>Logarithmic scales cannot represent zero or negative values. Free Scale values
+are positive scale factors. Zooming and panning adjust the current view; right-click
+restores the configured limits.</p>
+
+<h2>Examples</h2>
+<ul>
+  <li>To display a unit circle without distortion, choose Equal Scale and plot
+      <code>x(t)=cos(t)</code>, <code>y(t)=sin(t)</code>.</li>
+  <li>To inspect a function growing exponentially, enable Log Y and use positive
+      y-axis limits.</li>
+</ul>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="getting_started.htm#navigation">Zoom and pan controls</a></li>
+  <li><a href="getting_started.htm#user-curves">User-defined curves</a></li>
+  <li><a href="troubleshooting.htm">Troubleshooting</a></li>
+</ul>
+<p class="note"><strong>Notes:</strong> Draw Options are saved with the document.
+The view's temporary zoom and pan position is separate from the configured range.</p>
+<p class="tip"><strong>Tips:</strong> If a graph appears stretched, verify that the
+scale mode is appropriate and check both axis ranges.</p>
+<p class="warning"><strong>Warnings:</strong> A logarithmic range that includes
+non-positive values is adjusted for display and may not match the values you entered.</p>
+</body>
+</html>

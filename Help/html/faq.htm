@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Frequently Asked Questions</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Frequently Asked Questions</h1>
+<p class="nav"><a href="welcome.htm">Home</a> |
+<a href="getting_started.htm">Getting Started</a> |
+<a href="customization.htm">Customization</a> |
+<a href="troubleshooting.htm">Troubleshooting</a> |
+<a href="faq.htm">FAQ</a> |
+<a href="technical_information.htm">Technical Information</a> |
+<a href="release_notes.htm">Release Notes</a></p>
+
+<h2>Description</h2>
+<p>Answers to common questions about plotting, expression syntax, saved work,
+navigation, printing and the Help file.</p>
+
+<h2>How to Use</h2>
+<p>Select a question below. For a task walkthrough, see
+<a href="getting_started.htm">Getting Started</a>; for errors, see
+<a href="troubleshooting.htm">Troubleshooting</a>.</p>
+
+<h2>Questions and Answers</h2>
+<h3>How do I plot a function?</h3>
+<p>Enable a built-in function in the Draw Functions palette, or enter a formula
+in the <strong>y =</strong> field and check <strong>Draw Custom Function</strong>.
+Use <strong>Add...</strong> to create a separately labeled curve.</p>
+
+<h3>Can I plot a circle, spiral or implicit equation?</h3>
+<p>Yes. Add a Parametric, Polar or Implicit curve. For example, use
+<code>cos(t)</code> and <code>sin(t)</code> for a unit circle, or
+<code>x^2+y^2-1</code> for its implicit form.</p>
+
+<h3>Are angles in degrees?</h3>
+<p>Expression functions use radians. Triangle angle values are displayed in
+degrees. Convert degrees to radians in a formula by multiplying by
+<code>pi/180</code>.</p>
+
+<h3>How do I return to the original view?</h3>
+<p>Right-click in the graph. To change the original range, open
+<strong>Draw &gt; Draw Options...</strong>.</p>
+
+<h3>Why does my curve contain gaps?</h3>
+<p>Values outside the function's domain are not plotted. For instance,
+<code>sqrt(x)</code> is undefined for negative x and <code>1/x</code> is
+undefined at zero.</p>
+
+<h3>Does zooming recalculate my custom function?</h3>
+<p>No. The quick custom <code>y=f(x)</code> expression is sampled over its
+configured x-range. Set a wider range in the Draw Functions palette to sample
+more x values.</p>
+
+<h3>What is stored in a document?</h3>
+<p>GraphDrawer saves display options, built-in function visibility, custom curve
+definitions and geometric objects. Curve data is recalculated when the file is opened.</p>
+
+<h3>Where is the manual?</h3>
+<p>Choose <strong>Help &gt; Help Contents</strong> or press <strong>F1</strong>.
+The CHM file is installed in the application's <code>Help</code> subfolder.</p>
+
+<h2>Tips</h2>
+<ul>
+  <li>Use parentheses to make the intended order of operations clear.</li>
+  <li>Use <code>2*pi</code> for a full rotation in curve range fields.</li>
+</ul>
+
+<h2>Limitations</h2>
+<p>GraphDrawer does not perform symbolic simplification, differentiation or
+integration. Its plots are samples, not proofs of function behavior.</p>
+
+<h2>Examples</h2>
+<p>For a full unit circle, add a parametric curve with
+<code>x(t)=cos(t)</code>, <code>y(t)=sin(t)</code>, and range
+<code>0</code> to <code>2*pi</code>.</p>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="getting_started.htm">Getting Started</a></li>
+  <li><a href="technical_information.htm#expressions">Expression syntax</a></li>
+  <li><a href="troubleshooting.htm">Troubleshooting</a></li>
+</ul>
+<p class="note"><strong>Notes:</strong> The expression parser supports explicit
+operators and parentheses.</p>
+<p class="tip"><strong>Tips:</strong> If a formula is not accepted, build it up
+from a small working expression.</p>
+<p class="warning"><strong>Warnings:</strong> Large ranges or complex implicit
+curves may take longer to calculate.</p>
+</body>
+</html>

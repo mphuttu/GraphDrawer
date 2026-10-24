@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Release Notes</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Release Notes</h1>
+<p class="nav"><a href="welcome.htm">Home</a> |
+<a href="getting_started.htm">Getting Started</a> |
+<a href="customization.htm">Customization</a> |
+<a href="troubleshooting.htm">Troubleshooting</a> |
+<a href="faq.htm">FAQ</a> |
+<a href="technical_information.htm">Technical Information</a> |
+<a href="release_notes.htm">Release Notes</a></p>
+
+<h2>Description</h2>
+<p>This topic summarizes the documented GraphDrawer feature updates and fixes
+through the June 2026 release. The installer identifies the application as
+version 1.0.</p>
+
+<h2>How to Use</h2>
+<p>Review the entries below to understand when a feature or fix was introduced.
+For current usage steps, see <a href="getting_started.htm">Getting Started</a>.</p>
+
+<h2>2026-06</h2>
+<h3>Geometric figures</h3>
+<ul>
+  <li>Added labelled line segments with optional parallel and transversal lines.</li>
+  <li>Added triangles with configurable vertex, side and angle labels, angle values
+      and triangle type constraints.</li>
+  <li>Added circumcircles, incircles, perpendicular bisectors, angle bisectors,
+      altitudes and medians.</li>
+  <li>Corrected angle arc placement at triangle vertex B.</li>
+  <li>Changed circumcircle and incircle rendering to outlines so they do not
+      obscure the drawing.</li>
+</ul>
+<h3>Application icon</h3>
+<p>Updated the application and installer icons.</p>
+
+<h2>2026-05</h2>
+<h3>Stability and correctness</h3>
+<ul>
+  <li>Corrected print-preview header and footer sizing and placement.</li>
+  <li>Fixed a GDI pen handle leak during repeated custom-curve repaints by restoring
+      the previous pen before releasing the custom pen.</li>
+  <li>Fixed worker-thread lifetime handling to prevent accessing a deleted MFC
+      thread object.</li>
+  <li>Corrected expression exponent precedence so <code>-x^2</code> evaluates as
+      <code>-(x^2)</code>.</li>
+  <li>Enabled constant expressions such as <code>2*pi</code> and <code>e^2</code>
+      in curve range fields.</li>
+  <li>Added editing of existing user-defined curves.</li>
+</ul>
+<h3>Scale modes and rendering</h3>
+<ul>
+  <li>Added Equal Scale, Free Scale and base-10 Logarithmic scale modes.</li>
+  <li>Updated screen drawing to use pixel coordinates and adjusted panning for
+      each scale mode.</li>
+</ul>
+
+<h2>2026-04</h2>
+<ul>
+  <li>Added polar curves of the form <code>r=f(t)</code>.</li>
+  <li>Added implicit curves of the form <code>f(x,y)=0</code>.</li>
+</ul>
+
+<h2>Tips</h2>
+<ul>
+  <li>Use the current topics in this Help file; older readme notes may describe
+      intermediate development changes.</li>
+  <li>Check the application About dialog and installer properties for the
+      installed version.</li>
+</ul>
+
+<h2>Limitations</h2>
+<p>This summary reflects the release information currently available in the
+project README. It is not a complete per-build change log.</p>
+
+<h2>Examples</h2>
+<p>To use the 2026-04 polar-curve feature, add a Polar curve such as
+<code>r=1+cos(t)</code> with an angle range of <code>0</code> to
+<code>2*pi</code>.</p>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="getting_started.htm">Getting Started</a></li>
+  <li><a href="technical_information.htm">Technical Information</a></li>
+</ul>
+<p class="note"><strong>Notes:</strong> The release history describes notable
+features and corrections, not every source-code change.</p>
+<p class="tip"><strong>Tips:</strong> Rebuild the CHM and installer after updating
+the documentation to keep the distributed files in sync.</p>
+<p class="warning"><strong>Warnings:</strong> Do not infer a support promise for
+older Windows versions from historical development notes.</p>
+</body>
+</html>

@@ -341,6 +341,3 @@ void DrawUserCurves(CDC* pDC, const CoordTransform& ct,
                     std::vector<UserCurve>& vecCurves, CCriticalSection& cs);
 
 void DrawGeometricObjects(CDC* pDC, const CoordTransform& ct, CGraphDrawerDoc* pDoc);
-
-void DrawCustomFunction( CDC* pDC, int nTicksInterval, CRect m_rcPrintRect,
-                         COLORREF clrColor, CGraphDrawerDoc* pDoc);

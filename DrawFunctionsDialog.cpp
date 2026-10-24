@@ -117,7 +117,6 @@ END_MESSAGE_MAP()
 
 void CDrawFunctionsDialog::OnClickedDrawsinecheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pSine = (CButton*) GetDlgItem(IDC_DRAWSINECHECK);
 
 	if ( pSine->GetCheck() )
@@ -140,7 +139,6 @@ void CDrawFunctionsDialog::OnClickedDrawsinecheck()
 
 void CDrawFunctionsDialog::OnClickedDrawcosinecheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pCosine = (CButton*) GetDlgItem(IDC_DRAWCOSINECHECK);
 
 	if ( pCosine->GetCheck() )
@@ -163,7 +161,6 @@ void CDrawFunctionsDialog::OnClickedDrawcosinecheck()
 
 void CDrawFunctionsDialog::OnClickedDrawtancheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pTan = (CButton*) GetDlgItem(IDC_DRAWTANCHECK);
 
 	if ( pTan->GetCheck() )
@@ -186,7 +183,6 @@ void CDrawFunctionsDialog::OnClickedDrawtancheck()
 
 void CDrawFunctionsDialog::OnClickedDrawcotancheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pCotan = (CButton*) GetDlgItem(IDC_DRAWCOTANCHECK);
 
 	if ( pCotan->GetCheck() )
@@ -208,7 +204,6 @@ void CDrawFunctionsDialog::OnClickedDrawcotancheck()
 
 void CDrawFunctionsDialog::OnClickedDrawexpcheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pExp = (CButton*) GetDlgItem(IDC_DRAWEXPCHECK );
 
 	if ( pExp->GetCheck() )
@@ -230,7 +225,6 @@ void CDrawFunctionsDialog::OnClickedDrawexpcheck()
 
 void CDrawFunctionsDialog::OnClickedDrawlncheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pLN = (CButton*) GetDlgItem(IDC_DRAWLNCHECK);
 
 	if ( pLN->GetCheck() )
@@ -252,7 +246,6 @@ void CDrawFunctionsDialog::OnClickedDrawlncheck()
 
 void CDrawFunctionsDialog::OnClickedDrawarcsinecheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pArcsine = (CButton*) GetDlgItem(IDC_DRAWARCSINECHECK);
 
 	if ( pArcsine->GetCheck() )
@@ -275,7 +268,6 @@ void CDrawFunctionsDialog::OnClickedDrawarcsinecheck()
 
 void CDrawFunctionsDialog::OnClickedDrawarccosinecheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pArccosine = (CButton*) GetDlgItem(IDC_DRAWARCCOSINECHECK);
 
 	if ( pArccosine->GetCheck() )
@@ -297,7 +289,6 @@ void CDrawFunctionsDialog::OnClickedDrawarccosinecheck()
 
 void CDrawFunctionsDialog::OnClickedDrawarctancheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pArctan = (CButton*) GetDlgItem(IDC_DRAWARCTANCHECK);
 
 	if ( pArctan->GetCheck() )
@@ -320,7 +311,6 @@ void CDrawFunctionsDialog::OnClickedDrawarctancheck()
 
 void CDrawFunctionsDialog::OnClickedDrawarccotancheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pArccotan = (CButton*) GetDlgItem(IDC_DRAWARCCOTANCHECK);
 
 	if ( pArccotan->GetCheck() )
@@ -343,7 +333,6 @@ void CDrawFunctionsDialog::OnClickedDrawarccotancheck()
 
 void CDrawFunctionsDialog::OnClickedDrawhyperbolicsinecheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pHyperSine = (CButton*) GetDlgItem(IDC_DRAWHYPERBOLICSINECHECK);
 
 	if ( pHyperSine->GetCheck() )
@@ -366,7 +355,6 @@ void CDrawFunctionsDialog::OnClickedDrawhyperbolicsinecheck()
 
 void CDrawFunctionsDialog::OnClickedDrawhyperboliccosinecheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pHyperCos = (CButton*) GetDlgItem(IDC_DRAWHYPERBOLICCOSINECHECK);
 
 	if ( pHyperCos->GetCheck() )
@@ -391,7 +379,6 @@ void CDrawFunctionsDialog::OnClickedDrawhyperboliccosinecheck()
 
 void CDrawFunctionsDialog::OnClickedDrawhyperbolictangentcheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pHyperTan = (CButton*) GetDlgItem(IDC_DRAWHYPERBOLICTANGENTCHECK);
 
 	if ( pHyperTan->GetCheck() )
@@ -414,7 +401,6 @@ void CDrawFunctionsDialog::OnClickedDrawhyperbolictangentcheck()
 
 void CDrawFunctionsDialog::OnClickedDrawhyperboliccotangentcheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pHyperCot = (CButton*) GetDlgItem(IDC_DRAWHYPERBOLICCOTANGENTCHECK);
 
 	if ( pHyperCot->GetCheck() )

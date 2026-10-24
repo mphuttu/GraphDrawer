@@ -1,34 +1,62 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <HTML>
 <HEAD>
-<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<meta name="GENERATOR" content="Microsoft HTML Help Workshop">
 </HEAD>
 <BODY>
 <UL>
-  <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="overview">
-    <param name="Local" value="html\overview.htm">
-  </OBJECT>
-  <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="functions">
-    <param name="Local" value="html\drawing_functions.htm">
-  </OBJECT>
-  <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="custom expression">
-    <param name="Local" value="html\custom_expression.htm">
-  </OBJECT>
-  <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="expression syntax">
-    <param name="Local" value="html\custom_expression.htm">
-  </OBJECT>
-  <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="draw options">
-    <param name="Local" value="html\draw_options.htm">
-  </OBJECT>
-  <LI> <OBJECT type="text/sitemap">
-    <param name="Name" value="keyboard shortcuts">
-    <param name="Local" value="html\keyboard.htm">
-  </OBJECT>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Axes">
+    <param name="Local" value="html\customization.htm#axes">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Built-in functions">
+    <param name="Local" value="html\getting_started.htm#built-in-functions">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="CHM help file">
+    <param name="Local" value="html\technical_information.htm#help-file">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Custom expressions">
+    <param name="Local" value="html\getting_started.htm#custom-expressions">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Geometric figures">
+    <param name="Local" value="html\getting_started.htm#geometry">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Implicit curves">
+    <param name="Local" value="html\getting_started.htm#user-curves">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Logarithmic scale">
+    <param name="Local" value="html\customization.htm#scale">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Mouse controls">
+    <param name="Local" value="html\getting_started.htm#navigation">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Parametric curves">
+    <param name="Local" value="html\getting_started.htm#user-curves">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Polar curves">
+    <param name="Local" value="html\getting_started.htm#user-curves">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Printing">
+    <param name="Local" value="html\getting_started.htm#printing">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Saving documents">
+    <param name="Local" value="html\getting_started.htm#documents">
+  </OBJECT></LI>
+  <LI><OBJECT type="text/sitemap">
+    <param name="Name" value="Troubleshooting">
+    <param name="Local" value="html\troubleshooting.htm">
+  </OBJECT></LI>
 </UL>
 </BODY>
 </HTML>

@@ -35,8 +35,8 @@ SolidCompression=yes
 ; Appearance
 WizardStyle=modern
 SetupIconFile=..\res\GraphDrawerIcon.ico
-; Minimum Windows version: Windows 10 (6.2 or later accepted for compatibility)
-MinVersion=6.1
+; Minimum Windows version: Windows 10
+MinVersion=10.0
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -46,7 +46,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; Main executable (x64 Release build)
-Source: "..\Release\x64\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\GraphDrawer\Release\x64\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Visual C++ 2019 / 2022 Redistributable (x64)
 ; Bundle the redistributable so the end user doesn't need to install it separately.

@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Troubleshooting</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Troubleshooting</h1>
+<p class="nav"><a href="welcome.htm">Home</a> |
+<a href="getting_started.htm">Getting Started</a> |
+<a href="customization.htm">Customization</a> |
+<a href="troubleshooting.htm">Troubleshooting</a> |
+<a href="faq.htm">FAQ</a> |
+<a href="technical_information.htm">Technical Information</a> |
+<a href="release_notes.htm">Release Notes</a></p>
+
+<h2>Description</h2>
+<p>This topic lists common drawing, installation, printing and Help issues and
+the steps to resolve them.</p>
+
+<h2>How to Use</h2>
+<ol>
+  <li>Find the symptom below that most closely matches what you see.</li>
+  <li>Try the recommended steps in order.</li>
+  <li>If the problem remains, note the GraphDrawer version, Windows version,
+      architecture and exact expression or operation that triggered it.</li>
+</ol>
+
+<h2>Common Problems</h2>
+<h3>A curve does not appear</h3>
+<ul>
+  <li>Confirm its visibility checkbox is checked.</li>
+  <li>Check that the coordinate range includes the curve's domain and output values.</li>
+  <li>For an added curve, verify the expression and its range; undefined values are skipped.</li>
+  <li>On logarithmic axes, use positive coordinates.</li>
+</ul>
+
+<h3>The expression is rejected</h3>
+<p>Check parentheses, function names and the required variable. Use explicit
+multiplication, such as <code>2*x</code>; implicit multiplication such as
+<code>2x</code> is not supported. See
+<a href="technical_information.htm#expressions">Expression syntax</a>.</p>
+
+<h3>The curve has gaps or spikes</h3>
+<p>Gaps are expected where an expression is undefined, for example division by
+zero, <code>sqrt(-1)</code>, or <code>log(0)</code>. Near a discontinuity, reduce
+the sampling interval by narrowing the curve's range or use a different expression.</p>
+
+<h3>Zooming or panning changed the view</h3>
+<p>Right-click in the coordinate view to restore the range from Draw Options.
+If the visible range is still unsuitable, enter new X and Y limits in Draw Options.</p>
+
+<h3>The application will not start</h3>
+<p>Install the Microsoft Visual C++ 2015-2022 Redistributable matching the
+application architecture. The application also requires the corresponding MFC
+runtime. On 64-bit Windows, a 32-bit build requires the x86 runtime.</p>
+
+<h3>The Help menu cannot open the manual</h3>
+<p>Confirm that <code>Help\GraphDrawer.chm</code> exists beside the installed
+application. If Windows displays a blocked-content warning, open the file's
+Properties and use <strong>Unblock</strong> if that option is present.</p>
+
+<h3>Printing is blank or clipped</h3>
+<p>Open Print Preview, check the printer and page setup, and ensure the axes and
+curves fall inside the configured range. GraphDrawer currently prints one page.</p>
+
+<h2>Tips</h2>
+<ul>
+  <li>Test a complicated expression first with a simple range and fewer terms.</li>
+  <li>Use Print Preview before printing a final copy.</li>
+  <li>Save a copy before editing a document if you want to preserve its previous state.</li>
+</ul>
+
+<h2>Limitations</h2>
+<p>The application evaluates curves numerically and cannot prove whether a missing
+segment is mathematically absent or merely too narrow to sample. Some domain
+errors are silently omitted from the plotted line.</p>
+
+<h2>Examples</h2>
+<p>If <code>1/x</code> appears with a vertical line across its asymptote, use a
+narrower range around the discontinuity or plot separate ranges on either side
+of <code>x=0</code>.</p>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="getting_started.htm">Getting Started</a></li>
+  <li><a href="customization.htm#scale">Scale modes</a></li>
+  <li><a href="technical_information.htm">Technical Information</a></li>
+</ul>
+<p class="note"><strong>Notes:</strong> A curve may take a moment to appear while
+its sample points are calculated in the background.</p>
+<p class="tip"><strong>Tips:</strong> Keep a copy of the exact failing expression.
+It makes syntax and domain problems easier to diagnose.</p>
+<p class="warning"><strong>Warnings:</strong> Do not open documents from unknown or
+untrusted sources if you do not trust their contents.</p>
+</body>
+</html>

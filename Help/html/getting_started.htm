@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Getting Started</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Getting Started</h1>
+<p class="nav"><a href="welcome.htm">Home</a> |
+<a href="getting_started.htm">Getting Started</a> |
+<a href="customization.htm">Customization</a> |
+<a href="troubleshooting.htm">Troubleshooting</a> |
+<a href="faq.htm">FAQ</a> |
+<a href="technical_information.htm">Technical Information</a> |
+<a href="release_notes.htm">Release Notes</a></p>
+
+<h2>Description</h2>
+<p>This topic walks through plotting functions, creating curves, navigating the
+view, saving documents and printing. The main window displays the coordinate
+plane; the Draw Functions palette controls graphs.</p>
+
+<h2>How to Use</h2>
+<ol>
+  <li>Launch GraphDrawer. The Draw Functions palette is shown by default.</li>
+  <li>Check one or more built-in functions, or enter an expression in the
+      <strong>y =</strong> field and enable <strong>Draw Custom Function</strong>.</li>
+  <li>Use <strong>Add...</strong> to create a curve with its own label and color.</li>
+  <li>Choose <strong>Draw &gt; Draw Options...</strong> to set the coordinate range
+      and display style.</li>
+  <li>Choose <strong>File &gt; Save</strong> or <strong>Save As...</strong> to save
+      the current document.</li>
+</ol>
+
+<h2 id="built-in-functions">Plot Built-in Functions</h2>
+<p>The Draw Functions palette contains fourteen independent checkboxes:
+<code>sin</code>, <code>cos</code>, <code>tan</code>, <code>cot</code>,
+<code>exp</code>, <code>ln</code>, inverse trigonometric functions, and
+hyperbolic functions. Check a function to display it and clear the checkbox to
+hide it. The view redraws as selections change.</p>
+<p>For a user-defined expression, enter an expression in <code>x</code> in the
+<strong>y =</strong> field. The adjacent range fields specify the sampling
+interval for this quick custom plot.</p>
+
+<h2 id="custom-expressions">Enter a Custom Expression</h2>
+<ol>
+  <li>Type an expression such as <code>x^2 - x + 1</code> into the
+      <strong>y =</strong> field.</li>
+  <li>Set the x-range if needed. Range fields accept numbers and constant
+      expressions such as <code>-2*pi</code>.</li>
+  <li>Check <strong>Draw Custom Function</strong> or press <strong>OK</strong>
+      to apply the palette settings.</li>
+</ol>
+<p>For the full operator and function list, see
+<a href="technical_information.htm#expressions">Expression syntax</a>.</p>
+
+<h2 id="user-curves">Add, Edit, and Remove Curves</h2>
+<ol>
+  <li>Click <strong>Add...</strong> in the User-Defined Curves group.</li>
+  <li>Choose <strong>y = f(x)</strong>, <strong>Parametric</strong>,
+      <strong>Polar</strong>, or <strong>Implicit</strong>.</li>
+  <li>Enter the required expression(s), range, optional label and color, then
+      click <strong>OK</strong>.</li>
+  <li>Use the curve's checkbox to show or hide it. Select a curve and click
+      <strong>Edit...</strong> to change it, or <strong>Remove</strong> to delete it.</li>
+</ol>
+<table>
+  <tr><th>Curve type</th><th>Input</th><th>Example</th></tr>
+  <tr><td>Explicit</td><td><code>y = f(x)</code> and x range</td><td><code>x^2</code></td></tr>
+  <tr><td>Parametric</td><td><code>x(t)</code>, <code>y(t)</code>, and t range</td>
+      <td><code>cos(t)</code>, <code>sin(t)</code></td></tr>
+  <tr><td>Polar</td><td><code>r = f(t)</code> and angle range</td>
+      <td><code>1 + cos(t)</code></td></tr>
+  <tr><td>Implicit</td><td><code>f(x,y) = 0</code> and x/y ranges</td>
+      <td><code>x^2 + y^2 - 1</code></td></tr>
+</table>
+<p>Examples: a unit circle as a parametric curve is
+<code>x(t)=cos(t)</code>, <code>y(t)=sin(t)</code>, with range
+<code>0</code> to <code>2*pi</code>. A unit circle as an implicit curve is
+<code>x^2+y^2-1</code>.</p>
+
+<h2 id="geometry">Draw Geometric Figures</h2>
+<p>Choose <strong>Draw &gt; Draw Geometric Figures</strong> to open the geometric
+objects panel. Add a line segment by specifying its endpoints, or add a triangle
+by specifying vertices A, B and C. A line segment can optionally include a
+parallel line at a specified offset and a transversal through a selected point
+at an angle in degrees. Select an existing object to edit, remove or show/hide it.</p>
+<p>Triangle options include custom vertex, side and angle labels; angle values;
+circumcircle and incircle outlines; perpendicular bisectors; angle bisectors;
+altitudes; and medians. The type constraints are General, Right-angled (angle C
+is 90 degrees), Isosceles (AC = BC) and Equilateral.</p>
+
+<h2 id="navigation">Navigate the Coordinate View</h2>
+<table>
+  <tr><th>Action</th><th>Result</th></tr>
+  <tr><td>Mouse wheel up</td><td>Zoom in around the viewport center.</td></tr>
+  <tr><td>Mouse wheel down</td><td>Zoom out around the viewport center.</td></tr>
+  <tr><td>Left-button drag</td><td>Pan the coordinate view.</td></tr>
+  <tr><td>Right-click</td><td>Restore the range configured in Draw Options.</td></tr>
+</table>
+
+<h2 id="documents">Save and Open Documents</h2>
+<p>Use the File menu or standard shortcuts: <strong>Ctrl+N</strong> for New,
+<strong>Ctrl+O</strong> for Open, and <strong>Ctrl+S</strong> for Save. A document
+stores drawing options, enabled built-in functions, curve definitions and
+geometric objects. Computed curve points are recalculated when a document is
+opened.</p>
+
+<h2 id="printing">Print and Print Preview</h2>
+<p>Choose <strong>File &gt; Print Preview</strong> to inspect the output or
+<strong>File &gt; Print...</strong> to print. The application prints a single
+page and adds a document-name header and page-number footer.</p>
+
+<h2>Tips</h2>
+<ul>
+  <li>Use <code>pi</code> and <code>e</code> in expressions and range fields.</li>
+  <li>Use a descriptive label and color for each user-defined curve.</li>
+  <li>Right-click to return to the exact default range after panning or zooming.</li>
+</ul>
+
+<h2>Limitations</h2>
+<p>The quick custom <code>y=f(x)</code> plot is sampled over its configured x-range;
+zooming does not extend that sampling interval. Added curves are sampled
+numerically, so narrow features may need a smaller range or denser sampling.</p>
+
+<h2>Examples</h2>
+<ul>
+  <li>Parabola: <code>x^2</code>.</li>
+  <li>Gaussian: <code>exp(-x^2)</code>.</li>
+  <li>Circle: parametric <code>cos(t)</code>, <code>sin(t)</code>, range
+      <code>0</code> to <code>2*pi</code>.</li>
+</ul>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="customization.htm">Customization</a></li>
+  <li><a href="troubleshooting.htm">Troubleshooting</a></li>
+  <li><a href="technical_information.htm#expressions">Expression syntax</a></li>
+</ul>
+<p class="note"><strong>Notes:</strong> Function arguments and angles use radians.
+The coordinate view and the custom-expression sampling range are separate settings.</p>
+<p class="tip"><strong>Tips:</strong> Start with a small coordinate range and widen it
+after confirming that the expression behaves as expected.</p>
+<p class="warning"><strong>Warnings:</strong> Domain errors, such as division by zero,
+are not plotted. Logarithmic axes require positive coordinates.</p>
+</body>
+</html>

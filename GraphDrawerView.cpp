@@ -440,9 +440,7 @@ BOOL CGraphDrawerView::OnPreparePrinting(CPrintInfo* pInfo)
 
 void CGraphDrawerView::OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo)
 {
-	// TODO: add extra initialization before printing
-	// Create special font for printing
-	// ... prepare LOGFONT structure
+	// Create the font used by the printed header and footer.
 	LOGFONT lf; // logical font structure
 	::ZeroMemory( &lf, sizeof(lf) );
 
@@ -468,7 +466,7 @@ void CGraphDrawerView::OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo)
 
 void CGraphDrawerView::OnEndPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
 {
-	// TODO: add cleanup after printing
+	// Release the print font.
 	m_PrintFont.DeleteObject();
 }
 
@@ -515,58 +513,14 @@ void CGraphDrawerView::OnPrint(CDC* pDC, CPrintInfo* pInfo)
 
 void CGraphDrawerView::OnPrepareDC(CDC* pDC, CPrintInfo* pInfo)
 {
-	// TODO: Add your specialized code here and/or call the base class
-	
-	
-	// pDC->SetTextAlign(TA_LEFT);
-	// Set the mapping mode
-	// pDC->SetMapMode(MM_LOMETRIC); 
-	 // Declare a client rectangle
-	// CRect rcClient;
-	// Not printing, so client rect will do
-	// GetClientRect(&rcClient);
-	// CSize sz(rcClient.Width(), rcClient.Height()); 
-          
-		 // pDC->SetMapMode(MM_LOENGLISH);
-   //      pDC->SetViewportOrg( sz.cx/2, sz.cy/2 ); 
-	// pDC->SetViewportOrg(0, 0 ); 
-		 
+	ASSERT_VALID(pDC);
+	if (pInfo != NULL)
+	{
+		// Print one page when the document does not specify a page count.
+		pInfo->m_bContinuePrinting = (pInfo->GetMaxPage() != 0xffff ||
+			pInfo->m_nCurPage == 1);
+	}
 
-		 ASSERT_VALID(pDC);
-		 UNUSED(pDC);
-
-		 // Default to one page printing if doc length is not known
-		 if ( pInfo != NULL )
-			 pInfo->m_bContinuePrinting = ( pInfo->GetMaxPage() != 0xffff ||
-			 ( pInfo->m_nCurPage == 1 ) );
-
-		 /*
-		 // Continue printing until the query finishes
-		 CGraphDrawerDoc* pDoc = GetDocument();
-		 ASSERT_VALID(pDoc);
-
-		 if ( pInfo != 0 )
-			 pInfo->m_bContinuePrinting = !pDoc->QueryFinished();
-			 */
-
-		 /*
-		 if(pDC->IsPrinting()) 
-		 { 
-			pDC->SetMapMode(MM_LOMETRIC); 
-			pDC->SetWindowExt(GetDocument()->GetDocSize()); 
-			pDC->SetViewportExt(2300,3200);
-		 }
-		 */
-
-		 /*
-		 if ( pDC->IsPrinting() )
-		 {
-			 int pageHeight = pDC->GetDeviceCaps(VERTRES);
-			 int OriginY = pageHeight * ( pInfo->m_nCurPage -1 );
-			 pDC->SetViewportOrg(0, -OriginY );
-		 }
-
-		 */
 	CView::OnPrepareDC(pDC, pInfo);
 }
 
@@ -652,7 +606,6 @@ void CGraphDrawerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 BOOL CGraphDrawerView::OnEraseBkgnd(CDC* pDC)
 {
-	// TODO: Add your message handler code here and/or call default
 	CGraphDrawerDoc * pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
@@ -664,10 +617,6 @@ BOOL CGraphDrawerView::OnEraseBkgnd(CDC* pDC)
 	// Save old brush 
 	CBrush* pOldBrush = pDC->SelectObject(&backBrush);
 
-	//CRect rect;
-	// pDC->GetClipBox(&rect); // Erase the area needed
-
-	// pDC->PatBlt( rect.left, rect.top, rect.Width(), rect.Height(), PATCOPY);
 	CRect rcClient;
 	GetClientRect(&rcClient);
 	pDC->FillRect(rcClient, &backBrush);

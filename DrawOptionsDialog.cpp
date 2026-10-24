@@ -79,7 +79,6 @@ END_MESSAGE_MAP()
 
 void CDrawOptionsDialog::OnClickedShowcoordinateaxescheck()
 {
-	// TODO: Add your control notification handler code here
 	// Get a pointer to each of the check box object
 	CButton* pCoordAxes = (CButton*) GetDlgItem(IDC_SHOWCOORDINATEAXESCHECK);
 	CButton* pShowTicks = (CButton*) GetDlgItem ( IDC_SHOWTICKSCHECK );
@@ -101,7 +100,6 @@ void CDrawOptionsDialog::OnClickedShowcoordinateaxescheck()
 
 void CDrawOptionsDialog::OnClickedShowtickscheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pShowTicks = (CButton*) GetDlgItem(IDC_SHOWTICKSCHECK);
 	CButton* pCoordAxes = (CButton*) GetDlgItem(IDC_SHOWCOORDINATEAXESCHECK);
 	CButton* pShowTicksLabel = (CButton*) GetDlgItem (IDC_SHOWTICKSLABELCHECK);
@@ -124,7 +122,6 @@ void CDrawOptionsDialog::OnClickedShowtickscheck()
 
 void CDrawOptionsDialog::OnClickedShowtickslabelcheck()
 {
-	// TODO: Add your control notification handler code here
 	CButton* pShowTicksLabel = (CButton*) GetDlgItem(IDC_SHOWTICKSLABELCHECK);
 	CButton* pShowTicks = (CButton*) GetDlgItem ( IDC_SHOWTICKSCHECK);
 	CButton* pCoordAxes = (CButton*) GetDlgItem (IDC_SHOWCOORDINATEAXESCHECK);
@@ -144,8 +141,6 @@ void CDrawOptionsDialog::OnClickedShowtickslabelcheck()
 
 void CDrawOptionsDialog::OnBnClickedOk()
 {
-	// TODO: Add your control notification handler code here
-
 	// Transfer data from the controls to the variables
 	UpdateData();
 
@@ -158,19 +153,10 @@ BOOL CDrawOptionsDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	// TODO:  Add extra initialization here
-	// m_editTicksInterval.SetWindowText(_T("100"));
-
 	PopulatePenWidthCombo();
-    // m_cbPenWidth.SetCurSel(0);
-	// CString strGetSel;
-	// strGetSel.Format(_T("Current selection is %d"), m_cbPenWidth.GetCurSel() );
-	// AfxMessageBox(strGetSel);
-	// m_wndCoordAxesColor.SetColor(RGB(0,0,255));
-	// Piilota yksikköeditboksit jos ei "free scaling"
 	GetDlgItem(IDC_SCALE_X_EDIT)->ShowWindow(m_scaleMode == 1 ? SW_SHOW : SW_HIDE);
 	GetDlgItem(IDC_SCALE_Y_EDIT)->ShowWindow(m_scaleMode == 1 ? SW_SHOW : SW_HIDE);
-	// Aktivoi log sub-mode radionapit vain logaritmitilassa
+	// Enable logarithmic sub-mode controls only in logarithmic scale mode.
 	BOOL bLog = (m_scaleMode == 2);
 	GetDlgItem(IDC_LOG_X_ONLY)->EnableWindow(bLog);
 	GetDlgItem(IDC_LOG_Y_ONLY)->EnableWindow(bLog);
@@ -182,47 +168,18 @@ BOOL CDrawOptionsDialog::OnInitDialog()
 // Populate Pen Width Combo box
 void CDrawOptionsDialog::PopulatePenWidthCombo(void)
 {
-	
-	int i =0;
-	
-	for (i=0; i< 10; i++){
+	for (int i = 0; i < 10; ++i)
+	{
 		CString strTmpOne;
-		strTmpOne.Format(_T("%d pt"), i+1);
+		strTmpOne.Format(_T("%d pt"), i + 1);
 		m_cbPenWidth.AddString(strTmpOne);
 	}
-	
-
-	// m_cbPenWidth.AddString(_T("1 pt"));
-
-	/*
-	for ( int i = 0; i< 10; i++)
-	{
-	COMBOBOXEXITEM cbi = {0};
-	CString str;
-	str.Format(_T("%d pt"), i +1);
-	int nItem;
-
-	cbi.mask = CBEIF_IMAGE | CBEIF_INDENT | CBEIF_OVERLAY  | CBEIF_SELECTEDIMAGE | CBEIF_TEXT;
-
-	cbi.iItem = i;
-	cbi.pszText = (LPTSTR) (LPCTSTR) str;
-	cbi.iImage = 0;
-	cbi.iSelectedImage = 1;
-	cbi.iOverlay = 2;
-	cbi.iIndent = ( 0 & 0x03 ); // Set indentation according to item position
-
-	nItem = m_cbPenWidth.InsertItem (&cbi);
-	ASSERT(nItem == i );
-	}
-	*/
-	
 }
 
 
 
 void CDrawOptionsDialog::OnClickedMfccolorbuttoncoord()
 {
-	// TODO: Add your control notification handler code here
 	m_clrAxesColor = m_wndCoordAxesColor.GetColor();	
 	UpdateData();
 }
@@ -283,24 +240,19 @@ void CDrawOptionsDialog::SetData(DrawOptionsData dr)
 
 void CDrawOptionsDialog::OnSelchangePenwidthcombo()
 {
-	// TODO: Add your control notification handler code here
-		// ** Retrieve the index of the selected item
+	// Retrieve the selected thickness.
 	int nIndex = m_cbPenWidth.GetCurSel();
-	
-	// ** Check if the index is valid
 
 	if ( nIndex != CB_ERR )
 	{
 		m_nAxesPenWidth = nIndex + 1;
-		// PopulatePenWidthCombo();
-		 UpdateData();
+		UpdateData();
 	}
 }
 
 
 void CDrawOptionsDialog::OnClickedBkgndmfccolorbutton()
 {
-	// TODO: Add your control notification handler code here
 	m_clrBkgndColor = m_wndBkgndColor.GetColor();
 	UpdateData();
 }

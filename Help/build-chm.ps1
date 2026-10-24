@@ -1,19 +1,28 @@
-# Find hhc.exe
-$hhc = "C:\Program Files (x86)\HTML Help Workshop\hhc.exe"
-if (-not (Test-Path $hhc)) {
-    $hhc = Get-ChildItem "C:\Program Files*" -Recurse -Filter "hhc.exe" -EA SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-}
-Write-Host "hhc: $hhc"
+$ErrorActionPreference = 'Stop'
 
-# Compile CHM if hhc found
-if ($hhc -and (Test-Path $hhc)) {
-    Push-Location "d:\Projects\MFC\GraphDrawer\GraphDrawer\Help"
-    & $hhc "GraphDrawer.hhp"
-    $exitCode = $LASTEXITCODE
+$hhcCandidates = @(
+    (Join-Path ${env:ProgramFiles(x86)} 'HTML Help Workshop\hhc.exe'),
+    (Join-Path $env:ProgramFiles 'HTML Help Workshop\hhc.exe')
+)
+$hhc = $hhcCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if (-not $hhc) {
+    throw 'HTML Help Workshop was not found. Install it from https://learn.microsoft.com/en-us/previous-versions/windows/desktop/htmlhelp/microsoft-html-help-downloads'
+}
+
+Push-Location $PSScriptRoot
+try {
+    $compilerOutput = & $hhc 'GraphDrawer.hhp' 2>&1
+    $compilerOutput | ForEach-Object { Write-Host $_ }
+
+    $chm = Join-Path $PSScriptRoot 'GraphDrawer.chm'
+    if (($compilerOutput -join "`n") -notmatch '(?i)Created .+GraphDrawer\.chm' -or
+        -not (Test-Path $chm) -or (Get-Item $chm).Length -eq 0) {
+        throw "HTML Help Workshop did not produce a valid CHM file at '$chm'."
+    }
+
+    Write-Host "Built $chm"
+}
+finally {
     Pop-Location
-    Write-Host "hhc exit code: $exitCode"
-    Test-Path "d:\Projects\MFC\GraphDrawer\GraphDrawer\Help\GraphDrawer.chm"
-} else {
-    Write-Host "hhc.exe not found!"
-    $false
 }

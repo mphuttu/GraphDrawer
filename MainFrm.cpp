@@ -69,7 +69,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
 
-	// TODO: Delete these three lines if you don't want the toolbar to be dockable
+	// Enable docking for the toolbar.
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
@@ -99,9 +99,6 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
 	if( !CFrameWnd::PreCreateWindow(cs) )
 		return FALSE;
-	// TODO: Modify the Window class or styles here by modifying
-	//  the CREATESTRUCT cs
-
 	return TRUE;
 }
 
@@ -123,17 +120,11 @@ void CMainFrame::Dump(CDumpContext& dc) const
 // CMainFrame message handlers
 void CMainFrame::OnUpdateCR(CCmdUI* pCmdUI)
 {
-	CGraphDrawerApp* pApp = dynamic_cast<CGraphDrawerApp*>(AfxGetApp() );
-	ASSERT_VALID(pApp);
-
-	CDC *dc=GetDC();
-	
-	// Set mapping mode
-	dc->SetMapMode(MM_LOMETRIC);
+	CClientDC dc(this);
+	dc.SetMapMode(MM_LOMETRIC);
 	CRect rcClient;
 	GetClientRect(&rcClient);
-	// Convert to logical units
-	 dc->DPtoLP(&rcClient);
+	dc.DPtoLP(&rcClient);
 
 	int nHalfWidth = rcClient.Width() / 2;
 	int nHalfHeight = rcClient.Height() / 2;
@@ -150,21 +141,14 @@ void CMainFrame::OnUpdateCR(CCmdUI* pCmdUI)
 
 void CMainFrame::OnViewDrawfunctions()
 {
-	// TODO: Add your command handler code here
 	SetDrawFuncVisible(m_bDrawFuncVisible ? FALSE : TRUE );
 }
 
 
 void CMainFrame::OnUpdateViewDrawfunctions(CCmdUI *pCmdUI)
 {
-	// TODO: Add your command update UI handler code here
-	BOOL bEnable = FALSE;
-	// CGraphDrawerDoc * pDoc = dynamic_cast<CGraphDrawerDoc *>(GetActiveDocument() );
-
 	pCmdUI->Enable(TRUE);
-
-	if ( bEnable)
-		pCmdUI->SetCheck(m_bDrawFuncVisible ? 1 : 0 );
+	pCmdUI->SetCheck(m_bDrawFuncVisible ? 1 : 0);
 }
 
 
